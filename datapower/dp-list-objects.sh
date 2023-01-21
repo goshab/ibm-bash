@@ -30,9 +30,12 @@ if [ -z "$dp_roma_port" ]; then
 fi
 
 readonly DP_ROMA_URL="https://${dp_host}:${dp_roma_port}"
+echo "Rest Management URL: "$DP_ROMA_URL
 
 if [ -z "$dp_user" ]; then
     read -p 'DataPower user name: ' dp_user
+else
+    echo "DataPower user name: "$dp_user
 fi
 
 if [ -z "$dp_psw" ]; then
@@ -42,6 +45,8 @@ fi
 
 if [ -z "$dp_object" ]; then
     read -p 'DataPower object: ' dp_object
+else
+    echo "Scanning for DataPower object: "$dp_object
 fi
 
 echo
