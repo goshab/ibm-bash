@@ -1,27 +1,50 @@
 #!/bin/bash
 ##################################################################################
-# This script lists DataPower object across all domains.
+# This script lists DataPower objects across all the applicaation domains.
 # 
 # Before running this script the following should be configured manually:
-# 1) DataPower ROMA enabled.
-# 2) Review customer configuration section bellow.
+# 1) DataPower Rest Management Interface is enabled.
+# 2) Review custom configuration section bellow.
 ##################################################################################
-# Tested on:
+# Tested on DataPower firmware versions:
 #  10.5.0.2
 ##################################################################################
 
 ##################################################################################
-# Customer configuration
+# Custom configuration
 ##################################################################################
-readonly dp_host=dp.gosha.com
-readonly dp_roma_port=5554
-readonly dp_user=admin
-readonly dp_psw=password
-readonly dp_object=SSLProxyProfile
+dp_host=
+dp_roma_port=5554
+dp_user=admin
+dp_psw=
+dp_object=SSLProxyProfile
 ##################################################################################
 # Internal configuration
 ##################################################################################
+if [ -z "$dp_host" ]; then
+    read -p 'DataPower hostname or IP: ' dp_host
+fi
+
+if [ -z "$dp_roma_port" ]; then
+    read -p 'DataPower Rest Management Interface port: ' dp_roma_port
+fi
+
 readonly DP_ROMA_URL="https://${dp_host}:${dp_roma_port}"
+
+if [ -z "$dp_user" ]; then
+    read -p 'DataPower user name: ' dp_user
+fi
+
+if [ -z "$dp_psw" ]; then
+    read -sp 'DataPower user password: ' dp_psw
+    echo
+fi
+
+if [ -z "$dp_object" ]; then
+    read -p 'DataPower object: ' dp_object
+fi
+
+echo
 ##################################################################################
 # List DataPower objects in a domain
 ##################################################################################
@@ -39,9 +62,14 @@ dp_listObjectsInDomain() {
     echo $objects
 }
 
+##################################################################################
+# Main
+##################################################################################
 declare -a domains="$(dp_listObjectsInDomain $dp_user $dp_psw $DP_ROMA_URL default Domain)"
 
-if [[ ${#domains[@]} -gt 0 ]]; then
+if [ -z "$domains" ]; then
+    echo "Could not retrieve data from the DataPower"
+else
     for domain in ${domains[@]}; do
         echo "Domain: $domain"
         declare -a objects="$(dp_listObjectsInDomain $dp_user $dp_psw $DP_ROMA_URL $domain $dp_object)"
