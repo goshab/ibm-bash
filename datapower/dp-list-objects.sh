@@ -53,7 +53,7 @@ fi
 
 echo
 ##################################################################################
-# List DataPower objects in a domain
+# Get a list of DataPower objects in a domain
 ##################################################################################
 dp_listObjectsInDomain() {
     DP_USER_NAME=$1
