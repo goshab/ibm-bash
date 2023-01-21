@@ -56,13 +56,13 @@ echo
 # List DataPower objects in a domain
 ##################################################################################
 dp_listObjectsInDomain() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
+    DP_USER_NAME=$1
+    DP_USER_PASSWORD=$2
     ROMA_URL=$3
     DOMAIN_NAME=$4
     OBJECT_NAME=$5
 
-    objects=$(curl -s -k -u $SOMA_USER:$SOMA_PSW -X GET ${ROMA_URL}/mgmt/config/$DOMAIN_NAME/$OBJECT_NAME | jq -r ".${OBJECT_NAME}[]?.name?")
+    objects=$(curl -s -k -u $DP_USER_NAME:$DP_USER_PASSWORD -X GET ${ROMA_URL}/mgmt/config/$DOMAIN_NAME/$OBJECT_NAME | jq -r ".${OBJECT_NAME}[]?.name?")
     if [ "$objects" = "null" ]; then
         exit
     fi
