@@ -41,8 +41,8 @@ echo "==========================================================================
 ../../apicup subsys set mgmt default-password=$VM_APICADM_PASSWORD_HASHED
 ../../apicup subsys set mgmt ssh-keyfiles=$VM_APICADM_SSH_KEY_FILENAME.pub
 
-../../apicup hosts create mgmt $MGMT_VM_HOST $VM_HD_PASSWORD
-../../apicup iface create mgmt $MGMT_VM_HOST eth0 $MGMT_VM_IP/$MGMT_VM_SUBNET_MASK $MGMT_VM_DEFAULT_GATEWAY
+../../apicup hosts create mgmt $MGMT_VM1_HOST $VM_HD_PASSWORD
+../../apicup iface create mgmt $MGMT_VM1_HOST eth0 $MGMT_VM1_IP/$MGMT_VM1_SUBNET_MASK $MGMT_VM1_DEFAULT_GATEWAY
 # ../../apicup subsys set mgmt cassandra-backup-protocol=objstore
 # ../../apicup subsys set mgmt cassandra-backup-host=s3.us-south.cloud-object-storage.appdomain.cloud/us-south
 # ../../apicup subsys set mgmt cassandra-backup-auth-user=$MGMT_BACKUP_USERNAME

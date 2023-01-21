@@ -60,7 +60,7 @@ basicConstraints = critical,CA:FALSE
 keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 extendedKeyUsage = serverAuth,clientAuth
 subjectKeyIdentifier = hash
-subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_VM_HOST
+subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_SERVER1_MGMT_HOSTNAME
 EOF
 
 echo "Generating CSR"
@@ -80,7 +80,7 @@ keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 # keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth, clientAuth
 subjectKeyIdentifier = hash
-subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_VM_HOST
+subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_SERVER1_MGMT_HOSTNAME
 EOF
 
     openssl x509 -req -days $KEYS_CERT_DAYS -in $GTW_CSR -CA $ROOTCA_CERT -out $GTW_CERT -sha256 -extfile $GTW_EXT -CAkey $ROOTCA_PRIVKEY -CAcreateserial 
