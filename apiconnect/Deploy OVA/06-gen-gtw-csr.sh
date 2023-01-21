@@ -63,12 +63,12 @@ keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 extendedKeyUsage = serverAuth,clientAuth
 subjectKeyIdentifier = hash
 # subjectAltName = @alt_names
-subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_VM_HOST
+subjectAltName = DNS:$DP_GW_ENDPOINT_AI,DNS:$DP_GWD_ENDPOINT_AI,DNS:$DP_SERVER1_MGMT_HOSTNAME
 
 # [alt_names]
 # DNS.1 = $DP_GW_ENDPOINT_AI
 # DNS.2 = $DP_GWD_ENDPOINT_AI
-# DNS.3 = $DP_VM_HOST
+# DNS.3 = $DP_SERVER1_MGMT_HOSTNAME
 EOF
 
 openssl req -config $GTW_CONF -out $GTW_CSR -outform PEM -new -keyout $GTW_PRIVKEY
