@@ -14,6 +14,8 @@
 
 ##################################################################################
 # Custom configuration
+# * Filling out all the arguments casuses the script to run siliently. 
+# * Leaving the arguments unset will request console input at the runtime.
 ##################################################################################
 dp_host=
 dp_roma_port=5554
