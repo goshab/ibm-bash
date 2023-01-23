@@ -2,9 +2,9 @@
 ##################################################################################
 # This script lists DataPower objects across all the applicaation domains.
 # 
-# Before running this script the following should be configured manually:
-# 1) DataPower Rest Management Interface is enabled.
-# 2) Review custom configuration section bellow.
+# Prerequisites:
+# 1) Make sure the DataPower Rest Management Interface is enabled.
+# 2) Review the custom configuration section bellow.
 ##################################################################################
 # Tested on DataPower firmware versions:
 #  10.5.0.2
