@@ -19,3 +19,4 @@ Successfully tested on:
 3. Refactor out the 08-deploy-dp.sh custom configuration section to env.conf file.
 4. Support multiple ETH interfaces for separate management and data traffic (certs).
 5. Support Management and Portal backup configuration.
+6. Enable DP Statistics
