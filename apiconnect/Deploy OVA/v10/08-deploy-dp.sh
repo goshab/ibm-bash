@@ -3,8 +3,8 @@
 # This script creates APIC confiuration on a 3 node cluster DataPower env.
 # 
 # Before running this script the following should be configured manually:
-# 1) XML Management Interface is configured on all DataPower gateways.
-# 2) REST Management Interface is configured on all DataPower gateways.
+# 1) XML Management Interface is enabled on all DataPower gateways.
+# 2) REST Management Interface is enabled on all DataPower gateways.
 # 3) Same credentials are used for all DataPower gateways.
 # 4) DP cert, key, inter ca, root ca located in the same folder with this script.
 # 5) Review customer configuration section bellow.
@@ -32,6 +32,7 @@ if [ ! -f ./$1 ]; then
 fi
 
 # . ./00-env.conf
+. $1
 cd $PROJECT_DIR
 echo "================================================================================"
 echo "Configuring the Gateway service"
@@ -51,6 +52,24 @@ if [ -z "$DP_SERVER1_USER_PASSWORD" ]; then
     echo
 fi
 ##################################################################################
+# Is DP 
+##################################################################################
+isDpClustrt(){
+numOfDpGateways(){
+    SEQ = 1
+
+    while [ true ]; do
+        DP_SERVER1_MGMT_IP
+        if [ -z "$DP_SERVER${SEQ}_MGMT_IP" ]; then
+            exit
+        fi
+        SEQ = SEQ + 1
+    done
+
+    echo result
+
+}
+##################################################################################
 # Upload file
 ##################################################################################
 somaUploadFile() {
@@ -60,8 +79,9 @@ somaUploadFile() {
     DOMAIN_NAME=$4
     DP_FOLDER=$5
     FILE_NAME=$6
+    LOCAL_FOLDER=$7
 
-    FILE_CONTENT_BASE64ENCODED=$(base64 $FILE_NAME)
+    FILE_CONTENT_BASE64ENCODED=$(base64 $LOCAL_FOLDER/$FILE_NAME)
     DEST_FILE_PATH=$DP_FOLDER:///$FILE_NAME
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -537,6 +557,18 @@ EOF
 }
 ##################################################################################
 # Create Gateway Peering
+somaCreateGatewayPeering 
+1 $DP_SERVER1_USER_NAME 
+2 $DP_SERVER1_USER_PASSWORD 
+3 $DP_SERVER1_SOMA_URL 
+4 $DP_APIC_DOMAIN_NAME 
+5 $DP_HOST2 
+6 $DP_HOST3 
+7 $DP_PEERING_MGR_GWD 
+8 16380 
+9 26380 
+10 $PRIORITY
+
 ##################################################################################
 somaCreateGatewayPeering() {
     SOMA_USER=$1
@@ -769,26 +801,30 @@ deployApicConfigToDataPower() {
     echo "Deploying APIC config to DP gateway" $DP_HOST1
     echo "====================================================================================="
 
-    somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_ROOTCA_CERT_FILENAME
-    somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_INTERCA_CERT_FILENAME
-    somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_CERT_FILENAME
-    somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_PRIVKEY_FILENAME
+    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_ROOTCA_CERT_FILENAME keys
+    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_INTERCA_CERT_FILENAME keys
+    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_CERT_FILENAME keys
+    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_PRIVKEY_FILENAME keys
 
-    somaCreateHostAlias $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_SERVER1_MGMT_HOST_ALIAS $DP_IP1
-    somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    somaUpdateTimeZone $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL
-    somaSaveDomainConfiguration $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default"
+    # somaCreateHostAlias $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_SERVER1_MGMT_HOST_ALIAS $DP_IP1
+    # somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
+    # somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
+    # somaUpdateTimeZone $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL
+    # somaSaveDomainConfiguration $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default"
 
-    somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_ROOTCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_ROOTCA_CERT_FILENAME}"
-    somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_INTERCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_INTERCA_CERT_FILENAME}"
-    somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_CERT_OBJ "sharedcert:///${DP_CRYPTO_DP_CERT_FILENAME}"
-    somaCreateCryptoKey $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_KEY_OBJ "sharedcert:///${DP_CRYPTO_DP_PRIVKEY_FILENAME}"
-    somaCreateCryptoIdCred $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_IDCRED_OBJ
-    somaCreateSslServer $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_SERVER_PROFILE_OBJ
-    somaCreateSslClient $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ
+    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_ROOTCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_ROOTCA_CERT_FILENAME}"
+    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_INTERCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_INTERCA_CERT_FILENAME}"
+    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_CERT_OBJ "sharedcert:///${DP_CRYPTO_DP_CERT_FILENAME}"
+    # somaCreateCryptoKey $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_KEY_OBJ "sharedcert:///${DP_CRYPTO_DP_PRIVKEY_FILENAME}"
+    # somaCreateCryptoIdCred $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_IDCRED_OBJ
+    # somaCreateSslServer $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_SERVER_PROFILE_OBJ
+    # somaCreateSslClient $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ
 
+set -x
+# if not cluster - dp_host2 and dp_host3 are empty
     somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_GWD 16380 26380 $PRIORITY
+set +x
+exit
     somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_API_PROBE 16382 26382 $PRIORITY
     somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_API_RATE_LIMIT 16383 26383 $PRIORITY
     somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_SUBS 16384 26384 $PRIORITY
@@ -801,7 +837,7 @@ deployApicConfigToDataPower() {
 }
 ##################################################################################
 
-romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_ROMA_URL $DP_APIC_DOMAIN_NAME
+# romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_ROMA_URL $DP_APIC_DOMAIN_NAME
 deployApicConfigToDataPower $DP_SERVER1_MGMT_HOSTNAME $DP_SERVER1_MGMT_IP $DP_GWD_PEERING_PRIORITY_SERVER1 $DP_SERVER2_MGMT_HOSTNAME $DP_SERVER3_MGMT_HOSTNAME
 
 # romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER2_MGMT_HOSTNAME}:${dp_roma_port}" $DP_APIC_DOMAIN_NAME
