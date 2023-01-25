@@ -1,5 +1,7 @@
 #!/bin/bash
 # ===========================================================================
+# This script
+# ===========================================================================
 if [ -z "$1" ]; then
     echo "Syntax:"
     echo "  Provide configuration filename as a parameter"
@@ -13,8 +15,8 @@ fi
 
 # . ./00-env.conf
 cd $PROJECT_DIR
-mkdir keys
-cd keys
+mkdir $KEYS_DIR
+cd $KEYS_DIR
 
 echo "================================================================================"
 echo "Generating keys for the Gateway service"

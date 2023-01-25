@@ -14,7 +14,7 @@ fi
 
 # ../apicup init $PROJECT_DIR
 cd $PROJECT_DIR
-mkdir keys
+mkdir $KEYS_DIR
 # exit
 ../../apicup licenses accept $APIC_LICENSE_ID
 ssh-keygen -t rsa -C "API Connect VM ssh login key" -q -N "" -f $VM_APICADM_SSH_KEY_FILENAME
@@ -28,7 +28,7 @@ chmod +x $PTL_VM1_HOST.sh
 echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $A7S_VM1_HOST" > $A7S_VM1_HOST.sh
 chmod +x $A7S_VM1_HOST.sh
 
-cd keys
+cd $KEYS_DIR
 
 if [ -z "$ROOTCA_CN" ]; then 
   echo "Skipping Root CA keys generation"
