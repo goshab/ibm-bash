@@ -1,6 +1,6 @@
 #!/bin/bash
 ##################################################################################
-# This script creates APIC confiuration on a 3 node cluster DataPower env.
+# This script creates APIC confiuration on a cluster of 3 DataPower gateways.
 # 
 # Before running this script the following should be configured manually:
 # 1) XML Management Interface is enabled on all DataPower gateways.
@@ -10,7 +10,7 @@
 # 5) Review customer configuration section bellow.
 ##################################################################################
 # Tested on DataPower firmware vesions:
-#  2018.4.1.13
+#  10.0.5.2
 ##################################################################################
 # Notes:
 #  2018.4.1.9 - the SOMA request for Gateway Peering Manager object is different.
