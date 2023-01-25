@@ -57,6 +57,15 @@ peering_mgr_rate_limit=rate-limit
 peering_mgr_subs=subs
 
 timezone=UTC
+
+DP1_SOMA_URL="https://${host1}:${soma_port}${soma_uri}"
+DP2_SOMA_URL="https://${host2}:${soma_port}${soma_uri}"
+DP3_SOMA_URL="https://${host3}:${soma_port}${soma_uri}"
+
+DP1_ROMA_URL="https://${host1}:${roma_port}"
+DP2_ROMA_URL="https://${host2}:${roma_port}"
+DP3_ROMA_URL="https://${host3}:${roma_port}"
+
 ##################################################################################
 # Create Crypto ID Cred
 ##################################################################################
@@ -688,91 +697,91 @@ EOF
 ##################################################################################
 # Main program
 ##################################################################################
-somaCreateHostAlias $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $host_alias $ip1
-somaCreateHostAlias $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $host_alias $ip2
-somaCreateHostAlias $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $host_alias $ip3
 
-somaUpdateTimeZone $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}"
-somaUpdateTimeZone $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}"
-somaUpdateTimeZone $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}"
+# curl -k -u $soma_user:$soma_psw -X DELETE $DP1_ROMA_URL/mgmt/config/default/Domain/$apic_domain_name
+# curl -k -u $soma_user:$soma_psw -X DELETE $DP2_ROMA_URL/mgmt/config/default/Domain/$apic_domain_name
+# curl -k -u $soma_user:$soma_psw -X DELETE $DP3_ROMA_URL/mgmt/config/default/Domain/$apic_domain_name
 
-somaCreateDomain $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateDomain $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateDomain $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name
+somaCreateHostAlias $soma_user $soma_psw $DP1_SOMA_URL $host_alias $ip1
+somaCreateHostAlias $soma_user $soma_psw $DP2_SOMA_URL $host_alias $ip2
+somaCreateHostAlias $soma_user $soma_psw $DP3_SOMA_URL $host_alias $ip3
 
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" "default"
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" "default"
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" "default"
+somaUpdateTimeZone $soma_user $soma_psw $DP1_SOMA_URL
+somaUpdateTimeZone $soma_user $soma_psw $DP2_SOMA_URL
+somaUpdateTimeZone $soma_user $soma_psw $DP3_SOMA_URL
 
-somaCreateCryptoKey $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
-somaCreateCryptoKey $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
-somaCreateCryptoKey $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
+somaCreateDomain $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name
+somaCreateDomain $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name
+somaCreateDomain $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name
 
-somaCreateCryptoCert $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
+somaSaveDomainConfiguration $soma_user $soma_psw $DP1_SOMA_URL "default"
+somaSaveDomainConfiguration $soma_user $soma_psw $DP2_SOMA_URL "default"
+somaSaveDomainConfiguration $soma_user $soma_psw $DP3_SOMA_URL "default"
 
-somaCreateCryptoCert $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
+somaCreateCryptoKey $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
+somaCreateCryptoKey $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
+somaCreateCryptoKey $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $curdp_crypto_key_obj $curdp_crypto_key_filename
 
-somaCreateCryptoCert $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
-somaCreateCryptoCert $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $curdp_crypto_cert_obj $curdp_crypto_cert_filename
 
-somaCreateCryptoIdCred $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $curdp_id_cred_obj
-somaCreateCryptoIdCred $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $curdp_id_cred_obj
-somaCreateCryptoIdCred $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $curdp_id_cred_obj
+somaCreateCryptoCert $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $inter_ca_crypto_cert_obj $inter_ca_crypto_cert_filename
 
-somaCreateSslServer $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $ssl_server_profile
-somaCreateSslServer $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $ssl_server_profile
-somaCreateSslServer $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $ssl_server_profile
+somaCreateCryptoCert $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
+somaCreateCryptoCert $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $root_ca_crypto_cert_obj $root_ca_crypto_cert_filename
 
-somaCreateSslClient $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $ssl_client_profile
-somaCreateSslClient $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $ssl_client_profile
-somaCreateSslClient $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $ssl_client_profile
+somaCreateCryptoIdCred $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $curdp_id_cred_obj
+somaCreateCryptoIdCred $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $curdp_id_cred_obj
+somaCreateCryptoIdCred $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $curdp_id_cred_obj
 
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host3 $peering_mgr_gwd 16380 26380 80
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $host1 $host3 $peering_mgr_gwd 16380 26380 90
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host1 $peering_mgr_gwd 16380 26380 100
+somaCreateSslServer $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $ssl_server_profile
+somaCreateSslServer $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $ssl_server_profile
+somaCreateSslServer $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $ssl_server_profile
 
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host3 $peering_mgr_rate_limit 16383 26383 80
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $host1 $host3 $peering_mgr_rate_limit 16383 26383 90
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host1 $peering_mgr_rate_limit 16383 26383 100
+somaCreateSslClient $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $ssl_client_profile
+somaCreateSslClient $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $ssl_client_profile
+somaCreateSslClient $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $ssl_client_profile
 
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host3 $peering_mgr_subs 16384 26384 80
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $host1 $host3 $peering_mgr_subs 16384 26384 90
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host1 $peering_mgr_subs 16384 26384 100
+somaCreateGatewayPeering $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $host2 $host3 $peering_mgr_gwd 16380 26380 80
+somaCreateGatewayPeering $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $host1 $host3 $peering_mgr_gwd 16380 26380 90
+somaCreateGatewayPeering $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $host2 $host1 $peering_mgr_gwd 16380 26380 100
 
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host3 $peering_mgr_api_probe 16382 26382 80
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $host1 $host3 $peering_mgr_api_probe 16382 26382 90
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host1 $peering_mgr_api_probe 16382 26382 100
+somaCreateGatewayPeering $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $host2 $host3 $peering_mgr_rate_limit 16383 26383 80
+somaCreateGatewayPeering $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $host1 $host3 $peering_mgr_rate_limit 16383 26383 90
+somaCreateGatewayPeering $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $host2 $host1 $peering_mgr_rate_limit 16383 26383 100
 
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host3 $peering_mgr_api_tokens 16385 26385 80
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $host1 $host3 $peering_mgr_api_tokens 16385 26385 90
-somaCreateGatewayPeering $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $host2 $host1 $peering_mgr_api_tokens 16385 26385 100
+somaCreateGatewayPeering $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $host2 $host3 $peering_mgr_subs 16384 26384 80
+somaCreateGatewayPeering $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $host1 $host3 $peering_mgr_subs 16384 26384 90
+somaCreateGatewayPeering $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $host2 $host1 $peering_mgr_subs 16384 26384 100
 
-somaCreateGatewayPeeringManager $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
-somaCreateGatewayPeeringManager $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
-somaCreateGatewayPeeringManager $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
+somaCreateGatewayPeering $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $host2 $host3 $peering_mgr_api_probe 16382 26382 80
+somaCreateGatewayPeering $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $host1 $host3 $peering_mgr_api_probe 16382 26382 90
+somaCreateGatewayPeering $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $host2 $host1 $peering_mgr_api_probe 16382 26382 100
 
-somaCreateConfigSequence $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateConfigSequence $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateConfigSequence $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name
+somaCreateGatewayPeering $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $host2 $host3 $peering_mgr_api_tokens 16385 26385 80
+somaCreateGatewayPeering $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $host1 $host3 $peering_mgr_api_tokens 16385 26385 90
+somaCreateGatewayPeering $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $host2 $host1 $peering_mgr_api_tokens 16385 26385 100
 
-somaCreateApiConnectGatewayService $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateApiConnectGatewayService $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateApiConnectGatewayService $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name
+somaCreateGatewayPeeringManager $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
+somaCreateGatewayPeeringManager $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
+somaCreateGatewayPeeringManager $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name $peering_mgr_rate_limit $peering_mgr_subs
 
-somaCreateApicSecurityTokenManager $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateApicSecurityTokenManager $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name
-somaCreateApicSecurityTokenManager $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name
+somaCreateConfigSequence $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name
+somaCreateConfigSequence $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name
+somaCreateConfigSequence $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name
 
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host1}:${soma_port}${soma_uri}" $apic_domain_name
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host2}:${soma_port}${soma_uri}" $apic_domain_name
-somaSaveDomainConfiguration $soma_user $soma_psw "https://${host3}:${soma_port}${soma_uri}" $apic_domain_name
+somaCreateApiConnectGatewayService $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name
+somaCreateApiConnectGatewayService $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name
+somaCreateApiConnectGatewayService $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name
 
-##################################################################################
-# curl -k -u $soma_user:$soma_psw -X DELETE https://$host1:$roma_port/mgmt/config/default/Domain/$apic_domain_name
-# curl -k -u $soma_user:$soma_psw -X DELETE https://$host2:$roma_port/mgmt/config/default/Domain/$apic_domain_name
-# curl -k -u $soma_user:$soma_psw -X DELETE https://$host2:$roma_port/mgmt/config/default/Domain/$apic_domain_name
+somaCreateApicSecurityTokenManager $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name
+somaCreateApicSecurityTokenManager $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name
+somaCreateApicSecurityTokenManager $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name
+
+somaSaveDomainConfiguration $soma_user $soma_psw $DP1_SOMA_URL $apic_domain_name
+somaSaveDomainConfiguration $soma_user $soma_psw $DP2_SOMA_URL $apic_domain_name
+somaSaveDomainConfiguration $soma_user $soma_psw $DP3_SOMA_URL $apic_domain_name
