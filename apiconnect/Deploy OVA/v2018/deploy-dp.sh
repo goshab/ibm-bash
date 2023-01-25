@@ -1,6 +1,9 @@
 #!/bin/bash
 ##################################################################################
-# before running this script the following should be configured manually:
+# This script deploys API Connect configuration on DataPower gateways.
+# It currently supports clusters of 3 DataPower gateways.
+##################################################################################
+# Before running this script the following should be configured manually:
 # 1) SOMA enabled and available on the host DNS
 # 2) DP cert, key, inter ca, root ca uploaded to sharedcert
 # 3) review customer configuration section
