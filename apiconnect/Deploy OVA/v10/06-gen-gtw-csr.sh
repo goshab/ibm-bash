@@ -13,7 +13,8 @@ if [ ! -f ./$1 ]; then
     exit
 fi
 
-# . ./00-env.conf
+. $1
+
 cd $PROJECT_DIR
 mkdir $KEYS_DIR
 cd $KEYS_DIR

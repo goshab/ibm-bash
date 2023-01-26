@@ -10,7 +10,7 @@ if [ ! -f ./$1 ]; then
     exit
 fi
 
-# . ./00-env.conf
+. $1
 
 ../apicup init $PROJECT_DIR
 cd $PROJECT_DIR

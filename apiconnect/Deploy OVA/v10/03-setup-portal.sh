@@ -15,7 +15,8 @@ if [ ! -f ./$1 ]; then
     exit
 fi
 
-# . ./00-env.conf
+. $1
+
 cd $PROJECT_DIR
 echo "================================================================================"
 echo "Configuring the "$PTL_APIC_SUBSYSTEM_NAME" service"
