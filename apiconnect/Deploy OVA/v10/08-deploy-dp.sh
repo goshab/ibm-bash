@@ -19,67 +19,95 @@
 # Changes:
 #   2022-11-11 Added somaUpdateTimeZone() function to configure UTC timezone.
 ##################################################################################
-
-if [ -z "$1" ]; then
-    echo "Syntax:"
-    echo "  Provide configuration filename as a parameter"
-    exit
-fi
-
-if [ ! -f ./$1 ]; then
-    echo "Configuration file $1 not found, aborting."
-    exit
-fi
-
-. $1
-
-cd $PROJECT_DIR
-echo "================================================================================"
-echo "Configuring the Gateway service"
-echo "================================================================================"
+# RFE
+#   Add support for TLSv13
+##################################################################################
 
 ##################################################################################
-# Internal configuration
+# Calculates number of DP servers
 ##################################################################################
-if [ -z "$DP_SERVER1_USER_NAME" ]; then
-    read -p 'DataPower user name: ' DP_SERVER1_USER_NAME
-else
-    echo "DataPower user name: "$DP_SERVER1_USER_NAME
-fi
-
-if [ -z "$DP_SERVER1_USER_PASSWORD" ]; then
-    read -sp 'DataPower user password: ' DP_SERVER1_USER_PASSWORD
-    echo
-fi
-##################################################################################
-# Is DP 
-##################################################################################
-isDpClustrt(){
 numOfDpGateways(){
-    SEQ = 1
+    SEQ=1
 
     while [ true ]; do
-        DP_SERVER1_MGMT_IP
-        if [ -z "$DP_SERVER${SEQ}_MGMT_IP" ]; then
+        CUR_DP="$(getIndirectValue DP_MGMT_IP_SERVER $SEQ)"
+        if [ -z "$CUR_DP" ]; then
+            echo $SEQ
             exit
         fi
-        SEQ = SEQ + 1
+        ((SEQ++))
     done
+}
+##################################################################################
+# Get indirect variable value
+##################################################################################
+getIndirectValue(){
+    PREFIX=$1
+    SUFFIX=$2
 
-    echo result
+    result="$PREFIX${SUFFIX}"
+    result="${!result}"
+    echo $result
+}
+##################################################################################
+# runSoma
+##################################################################################
+runSoma() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    DP_SOMA_REQ=$4
 
+    # curl -k -X POST -u $DP_USERNAME:$DP_PASSWORD $DP_SOMA_URL -d "${DP_SOMA_REQ}"
+    response=$(curl -s -k -X POST -u $DP_USERNAME:$DP_PASSWORD $DP_SOMA_URL -d "${DP_SOMA_REQ}")
+    analysis=$(echo $response | grep -o 'OK')
+    if [ "$analysis" = "OK" ]; then
+        echo -e "Result: "$GREEN"Success"$NC
+        if [ "$DEBUG" = "true" ]; then
+            echo Response
+            echo $response
+        fi
+   else
+        echo -e $RED"Error, DataPower SOMA response:"$NC
+        echo -e ${response}$NC
+        exit
+    fi
+}
+##################################################################################
+# runSoma
+##################################################################################
+runRoma() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_ROMA_URL=$3
+    HTTP_METHOD=$4
+    DP_ROMA_REQ=$5
+
+    CLI="curl -s -k -u $DP_USERNAME:$DP_PASSWORD -X $HTTP_METHOD $DP_ROMA_URL"
+    if [ ! -z "$DP_ROMA_REQ" ]; then
+        CLI=$CLI" -d "\'${DP_ROMA_REQ}\'
+    fi
+    if [ "$DEBUG" = "true" ]; then
+        echo CLI=$CLI
+    fi
+
+    response=$(eval $CLI)
+    if [ "$DEBUG" = "true" ]; then
+        echo Response
+        echo $response | jq .
+    fi
 }
 ##################################################################################
 # Upload file
 ##################################################################################
 somaUploadFile() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     DP_FOLDER=$5
-    FILE_NAME=$6
-    LOCAL_FOLDER=$7
+    LOCAL_FOLDER=$6
+    FILE_NAME=$7
 
     FILE_CONTENT_BASE64ENCODED=$(base64 $LOCAL_FOLDER/$FILE_NAME)
     DEST_FILE_PATH=$DP_FOLDER:///$FILE_NAME
@@ -95,21 +123,28 @@ EOF
 )
 
     echo "====================================================================================="
-    echo "Uploading file to" $DEST_FILE_PATH
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Crypto ID Cred
 ##################################################################################
 somaCreateCryptoIdCred() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     OBJ_NAME=$5
+
+
+    if [ ! -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
+        ROOT_CA="<CA>"$DP_CRYPTO_ROOTCA_CERT_OBJ"</CA>"
+    fi
+
+    if [ ! -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
+        INTER_CA="<CA>"$DP_CRYPTO_INTERCA_CERT_OBJ"</CA>"
+    fi
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -119,8 +154,8 @@ somaCreateCryptoIdCred() {
                     <mAdminState>enabled</mAdminState>
                     <Key>$DP_CRYPTO_DP_KEY_OBJ</Key>
                     <Certificate>$DP_CRYPTO_DP_CERT_OBJ</Certificate>
-                    <CA>$DP_CRYPTO_INTERCA_CERT_OBJ</CA>
-                    <CA>$DP_CRYPTO_ROOTCA_CERT_OBJ</CA>
+                    $ROOT_CA
+                    $INTER_CA
                 </CryptoIdentCred>
             </dp:set-config>
         </dp:request>
@@ -130,19 +165,18 @@ EOF
 )
 
     echo "====================================================================================="
-    echo "Creating crypto id cred" $OBJ_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Creating crypto id credentials" $OBJ_NAME
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Set UTC time zone
 ##################################################################################
 somaUpdateTimeZone() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    DP_TIMEZONE=$4
+
     SOMA_REQ=$(cat <<-EOF
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ma="http://www.datapower.com/schemas/management">
    <SOAP-ENV:Body>
@@ -158,20 +192,18 @@ somaUpdateTimeZone() {
 EOF
 )
     echo "====================================================================================="
-    echo "Setting time zone to " $DP_TIMEZONE
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Setting time zone to "$DP_TIMEZONE
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create API Security Token Manager
 ##################################################################################
 somaCreateApicSecurityTokenManager() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -179,7 +211,7 @@ somaCreateApicSecurityTokenManager() {
             <dp:set-config>
                 <APISecurityTokenManager name="default">
                     <mAdminState>enabled</mAdminState>
-                    <GatewayPeering>$DP_PEERING_MGR_API_TOKENS</GatewayPeering>
+                    <GatewayPeering>$DP_PEERING_MGR_TOKENS</GatewayPeering>
                 </APISecurityTokenManager>
             </dp:set-config>
         </dp:request>
@@ -190,21 +222,19 @@ EOF
 
     echo "====================================================================================="
     echo "Creating API Security Token Manager"
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Crypto Cert
 ##################################################################################
 somaCreateCryptoCert() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     OBJ_NAME=$5
     FILE_NAME=$6
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -227,21 +257,19 @@ EOF
 
     echo "====================================================================================="
     echo "Creating crypto cert" $OBJ_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Crypto Key
 ##################################################################################
 somaCreateCryptoKey() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     OBJ_NAME=$5
     FILE_NAME=$6
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -263,19 +291,17 @@ EOF
 
     echo "====================================================================================="
     echo "Creating crypto key" $OBJ_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Save domain configuration
 ##################################################################################
 somaSaveDomainConfiguration() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -291,19 +317,17 @@ EOF
 
     echo "====================================================================================="
     echo "Save domain configuration" $DOMAIN_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
-# Create domain
+# Create new DataPower application domain
 ##################################################################################
 somaCreateDomain() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -311,7 +335,7 @@ somaCreateDomain() {
             <dp:set-config>
                 <Domain name="$DOMAIN_NAME">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>api connect domain</UserSummary>
+                    <UserSummary>API Connect</UserSummary>
                     <NeighborDomain>default</NeighborDomain>
                 </Domain>
             </dp:set-config>
@@ -323,20 +347,18 @@ EOF
 
     echo "====================================================================================="
     echo "Creating domain" $DOMAIN_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Host Aliases
 ##################################################################################
 somaCreateHostAlias() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     ALIAS_NAME=$4
     IPADDRESS=$5
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -344,7 +366,6 @@ somaCreateHostAlias() {
             <dp:set-config>
                 <HostAlias name="$ALIAS_NAME">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>host alias</UserSummary>
                     <IPAddress>$IPADDRESS</IPAddress>
                 </HostAlias>
             </dp:set-config>
@@ -355,20 +376,125 @@ EOF
 )
     echo "====================================================================================="
     echo "Creating Host Aliases" $ALIAS_NAME "as" $IPADDRESS
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+}
+##################################################################################
+# Configure NTP Service
+##################################################################################
+somaConfigureNtpService() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    NTP_IP=$4
+
+    SOMA_REQ=$(cat <<-EOF
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
+   <soapenv:Body>
+        <dp:request domain="default">
+            <dp:set-config>
+                <NTPService name="$ALIAS_NAME">
+                    <mAdminState>enabled</mAdminState>
+                    <RefreshInterval>900</RefreshInterval>
+                    <RemoteServer>$NTP_IP</RemoteServer>
+                </NTPService>
+            </dp:set-config>
+        </dp:request>
+    </soapenv:Body>
+</soapenv:Envelope>
+EOF
+)
     echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
+    echo "Configuring NTP Service"
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+}
+##################################################################################
+# Configure API Probe
+##################################################################################
+somaConfigureApiProbe() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    MAX_RECORDS=$4
+    EXPIRATION=$5
+    GATEWAY_PEERING=$6
+    DP_SEQ=$7
+
     echo "====================================================================================="
+    echo "Configuring API Probe"
+
+    SOMA_REQ=$(cat <<-EOF
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
+   <soapenv:Body>
+        <dp:request domain="$DOMAIN_NAME">
+            <dp:set-config>
+                <APIDebugProbe name="default">
+                    <mAdminState>enabled</mAdminState>
+                    <MaxRecords>$MAX_RECORDS</MaxRecords>
+                    <Expiration>$EXPIRATION</Expiration>
+                    <GatewayPeering>$GATEWAY_PEERING</GatewayPeering>
+                </APIDebugProbe>
+            </dp:set-config>
+        </dp:request>
+    </soapenv:Body>
+</soapenv:Envelope>
+EOF
+)
+
+    # DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $DP_SEQ)"
+    # for ((i=1; i<=10; i++)); do
+    #     declare -a OP_STATE="$(romaGetDpOjectOpState $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $GATEWAY_PEERING)"
+    #     if [ "$OP_STATE" = "up" ]; then
+    #         break
+    #     else
+    #         echo -e $PURPLE"Retry "$i"/10: Dependent object is not up, sleeping for 30 sec"$NC
+    #         sleep 30
+    #     fi
+    # done
+
+    retry $DP_SEQ $DP_APIC_DOMAIN_NAME "GatewayPeering" $GATEWAY_PEERING
+
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+}
+##################################################################################
+# Configure Password Alias
+##################################################################################
+somaConfigurePasswordAlias() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    DOMAIN_NAME=$4
+    OBJ_NAME=$5
+    PASSWORD=$6
+
+    SOMA_REQ=$(cat <<-EOF
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
+   <soapenv:Body>
+        <dp:request domain="$DOMAIN_NAME">
+            <dp:set-config>
+                <PasswordAlias name="$OBJ_NAME">
+                    <mAdminState>enabled</mAdminState>
+                    <Password>$PASSWORD</Password>
+                </PasswordAlias>
+            </dp:set-config>
+        </dp:request>
+    </soapenv:Body>
+</soapenv:Envelope>
+EOF
+)
+    echo "====================================================================================="
+    echo "Configuring Password Map Alias "$OBJ_NAME
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create SSL/TLS Server
 ##################################################################################
 somaCreateSslServer() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     SSLSERVERPROFILE=$5
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -450,21 +576,19 @@ EOF
 )
 
     echo "====================================================================================="
-    echo "Creating SSL/TLS Server" $SSLSERVERPROFILE
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Creating SSL Server Profile" $SSLSERVERPROFILE
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create SSL/TLS Server
 ##################################################################################
 somaCreateSslClient() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     SSLCLIENTPROFILE=$5
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -549,38 +673,26 @@ EOF
 )
 
     echo "====================================================================================="
-    echo "Creating SSL/TLS ServClienter" $SSLCLIENTPROFILE
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Creating SSL Client Profile" $SSLCLIENTPROFILE
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Gateway Peering
-somaCreateGatewayPeering 
-1 $DP_SERVER1_USER_NAME 
-2 $DP_SERVER1_USER_PASSWORD 
-3 $DP_SERVER1_SOMA_URL 
-4 $DP_APIC_DOMAIN_NAME 
-5 $DP_HOST2 
-6 $DP_HOST3 
-7 $DP_PEERING_MGR_GWD 
-8 16380 
-9 26380 
-10 $PRIORITY
-
 ##################################################################################
 somaCreateGatewayPeering() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     PEER2=$5
     PEER3=$6
     PEERING_NAME=$7
     LOCAL_PORT=$8
     MONITOR_PORT=$9
-    PRIORITY=$10
+    PRIORITY=${10}
+    LOCATION=${11}
+    DP_MGMT_ADDRESS=${12}
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -588,8 +700,7 @@ somaCreateGatewayPeering() {
             <dp:set-config>
                 <GatewayPeering name="$PEERING_NAME">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>APIC peering</UserSummary>
-                    <LocalAddress>$DP_SERVER1_MGMT_HOST_ALIAS</LocalAddress>
+                    <LocalAddress>$DP_MGMT_ADDRESS</LocalAddress>
                     <LocalPort>$LOCAL_PORT</LocalPort>
                     <MonitorPort>$MONITOR_PORT</MonitorPort>
                     <EnablePeerGroup>on</EnablePeerGroup>
@@ -599,8 +710,9 @@ somaCreateGatewayPeering() {
                     <EnableSSL>on</EnableSSL>
                     <Idcred>$DP_CRYPTO_DP_IDCRED_OBJ</Idcred>
                     <Valcred></Valcred>
-                    <PersistenceLocation>memory</PersistenceLocation>
+                    <PersistenceLocation>$LOCATION</PersistenceLocation>
                     <LocalDirectory>local:///</LocalDirectory>
+                    <PasswordAlias>$DP_PEERING_GROUP_PASSWORD_ALIAS_OBJ</PasswordAlias>
                 </GatewayPeering>
             </dp:set-config>
         </dp:request>
@@ -611,21 +723,22 @@ EOF
 
     echo "====================================================================================="
     echo "Creating Gateway Peering" $PEERING_NAME
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Gateway Peering Manager
 ##################################################################################
 somaCreateGatewayPeeringManager() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
-    RATE_LIMIT=$5
-    SUBS=$6
+    PEERING_MGR_APICGW=$5
+    PEERING_MGR_API_RATE_LIMIT=$6
+    PEERING_MGR_SUBS=$7
+    PEERING_MGR_API_PROBE=$8
+    PEERING_MGR_GWS_RATE_LIMIT=$9
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -633,11 +746,11 @@ somaCreateGatewayPeeringManager() {
             <dp:set-config>
                 <GatewayPeeringManager name="default">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>APIC gw peering manager</UserSummary>
-                    <APIConnectGatewayService>$DP_PEERING_MGR_GWD</APIConnectGatewayService>
-                    <RateLimit>$RATE_LIMIT</RateLimit>
-                    <Subscription>$SUBS</Subscription>
-                    <RatelimitModule>default-gateway-peering</RatelimitModule>
+                    <APIConnectGatewayService>$PEERING_MGR_APICGW</APIConnectGatewayService>
+                    <RateLimit>$PEERING_MGR_API_RATE_LIMIT</RateLimit>
+                    <Subscription>$PEERING_MGR_SUBS</Subscription>
+                    <APIProbe>$PEERING_MGR_API_PROBE</APIProbe>
+                    <RatelimitModule>$PEERING_MGR_GWS_RATE_LIMIT</RatelimitModule>
                 </GatewayPeeringManager>
             </dp:set-config>
         </dp:request>
@@ -648,27 +761,23 @@ EOF
 
     echo "====================================================================================="
     echo "Creating Gateway Peering Manager"
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create Config Sequence
 ##################################################################################
 somaCreateConfigSequence() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
         <dp:request domain="$DOMAIN_NAME">
             <dp:set-config>
-                <ConfigSequence name="apiconnect">
+                <ConfigSequence name="$DP_CONFIG_SEQUENCE_OBJ">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>API Connect Configuration</UserSummary>
                     <Locations>
                         <Directory>local:///</Directory>
                         <AccessProfileName/>
@@ -691,19 +800,21 @@ EOF
 
     echo "====================================================================================="
     echo "Creating Config Sequence"
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Create API Connect Gateway Service
 ##################################################################################
 somaCreateApiConnectGatewayService() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    SOMA_URL=$3
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+    DP_MGMT_ADDRESS=$5
+    DP_DATA_ADDRESS=$6
+
+                    # <GatewayPeering>$DP_PEERING_MGR_APICGW</GatewayPeering>
+                    # <GatewayPeering>none</GatewayPeering>
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -711,14 +822,12 @@ somaCreateApiConnectGatewayService() {
             <dp:set-config>
                 <APIConnectGatewayService name="default">
                     <mAdminState>enabled</mAdminState>
-                    <UserSummary>APIC gw service</UserSummary>
-                    <LocalAddress>$DP_SERVER1_MGMT_HOST_ALIAS</LocalAddress>
+                    <LocalAddress>$DP_MGMT_ADDRESS</LocalAddress>
                     <LocalPort>$DP_GWD_ENDPOINT_PORT</LocalPort>
                     <SSLClient>$DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ</SSLClient>
                     <SSLServer>$DP_CRYPTO_SSL_SERVER_PROFILE_OBJ</SSLServer>
-                    <APIGatewayAddress>$DP_SERVER1_MGMT_HOST_ALIAS</APIGatewayAddress>
+                    <APIGatewayAddress>$DP_DATA_ADDRESS</APIGatewayAddress>
                     <APIGatewayPort>$DP_GW_ENDPOINT_PORT</APIGatewayPort>
-                    <GatewayPeering>default-gateway-peering</GatewayPeering>
                     <GatewayPeeringManager>default</GatewayPeeringManager>
                     <V5CompatibilityMode>off</V5CompatibilityMode>
                     <UserDefinedPolicies></UserDefinedPolicies>
@@ -735,10 +844,7 @@ EOF
 
     echo "====================================================================================="
     echo "Creating API Connect Gateway Service"
-    echo "====================================================================================="
-    curl -k -X POST -u $SOMA_USER:$SOMA_PSW $SOMA_URL -d "${SOMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
 # Delete domain
@@ -750,11 +856,111 @@ romaDeleteDomain() {
     DOMAIN_NAME=$4
 
     echo "====================================================================================="
-    echo "Deleting application domain" $DOMAIN_NAME
-    echo "====================================================================================="
-    curl -k -u $SOMA_USER:$SOMA_PSW -X DELETE "${ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}"
-    echo ""
-    echo "====================================================================================="
+    echo "Deleting application domain "$DOMAIN_NAME" on "$ROMA_URL
+    runRoma $SOMA_USER $SOMA_PSW "${ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" ""
+}
+##################################################################################
+# Check DataPower object status
+##################################################################################
+romaCheckDpOjectStatus() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_ROMA_URL=$3
+    DOMAIN_NAME=$4
+    OBJECT_TYPE=$5
+    OBJECT_NAME=$6
+
+    CLI1='curl -s -k -u '$DP_USERNAME':'$DP_PASSWORD' -X GET '$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
+    if [ "$DEBUG" = "true" ]; then
+        echo "curl CLI:"
+        echo $CLI1
+    fi
+    curl_response=$(eval $CLI1)
+    if [ "$DEBUG" = "true" ]; then
+        echo "curl response:"
+        echo $curl_response | jq .
+    fi
+
+    CLI21="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
+    CLI22="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+    obj_admin_state=$(eval $CLI21)
+    obj_op_state=$(eval $CLI22)
+    
+    if [ -z "$obj_admin_state" ]; then
+        # CLI3="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | "'$OBJECT_TYPE' " + .name +" is "+ .mAdminState + ", opstate="+.state.opstate'\'''
+        CLI31="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
+        CLI32="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+        obj_admin_state=$(eval $CLI31)
+        obj_op_state=$(eval $CLI32)
+    fi
+
+    if [ ! "$obj_admin_state" = "enabled" ] || [ ! "$obj_op_state" = "up" ]; then
+        COLOR=$RED
+    else
+        COLOR=$GREEN
+    fi
+
+    echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
+}
+##################################################################################
+# Get DataPower object operational state
+##################################################################################
+romaGetDpOjectOpState() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_ROMA_URL=$3
+    DOMAIN_NAME=$4
+    OBJECT_TYPE=$5
+    OBJECT_NAME=$6
+
+    CLI1='curl -s -k -u '$DP_USERNAME':'$DP_PASSWORD' -X GET '$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
+    if [ "$DEBUG" = "true" ]; then
+        echo "curl CLI:"
+        echo $CLI1
+    fi
+    curl_response=$(eval $CLI1)
+    if [ "$DEBUG" = "true" ]; then
+        echo "curl response:"
+        echo $curl_response | jq .
+    fi
+
+    CLI22="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+    obj_op_state=$(eval $CLI22)
+    
+    if [ -z "$obj_op_state" ]; then
+        CLI32="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+        obj_op_state=$(eval $CLI32)
+    fi
+
+    echo $obj_op_state
+}
+##################################################################################
+# Get DataPower object operational state
+##################################################################################
+retry() {
+    DP_SEQ=$1
+    DP_APIC_DOMAIN_NAME=$2
+    DP_OBJECT_TYPE=$3
+    DP_OBJECT_NAME=$4
+
+    DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $DP_SEQ)"
+    DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $DP_SEQ)"
+    DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $DP_SEQ)"
+
+    for ((i=1; i<=$RETRY_MAX; i++)); do
+        declare -a RESULT="$(romaGetDpOjectOpState $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DP_APIC_DOMAIN_NAME $DP_OBJECT_TYPE $DP_OBJECT_NAME)"
+        if [ "$RESULT" = "up" ]; then
+            break
+        else
+            echo -e $PURPLE"Retry "$i"/$RETRY_MAX: Object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, sleeping for $RETRY_INTERVAL sec"$NC
+            sleep $RETRY_INTERVAL
+        fi
+    done
+
+    if [ ! "$RESULT" = "up" ]; then
+        echo -e $RED"The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"$NC
+        exit
+    fi
 }
 ##################################################################################
 # Create user
@@ -768,6 +974,7 @@ romaCreateUser() {
     NEW_USER_NAME=$4
     NEW_USER_PSW=$5
     NEW_USER_ACCESS=$6
+
     ROMA_REQ=$(cat <<-EOF
 {
     "User": {
@@ -780,81 +987,177 @@ romaCreateUser() {
 EOF
 )
     echo "====================================================================================="
-    echo "Creating user" $DOMAIN_NAME
-    echo "====================================================================================="
-    curl -k -u $SOMA_USER:$SOMA_PSW -X PUT "${ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" -d "${ROMA_REQ}"
-    echo ""
-    echo "====================================================================================="
+    echo "Creating user" $NEW_USER_NAME
+    # curl -k -u $SOMA_USER:$SOMA_PSW -X PUT "${ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" -d "${ROMA_REQ}"
+    runRoma $SOMA_USER $SOMA_PSW "${ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
 }
-
 ##################################################################################
 # Deploy APIC config to DP gateway
 ##################################################################################
 deployApicConfigToDataPower() {
-    DP_HOST1=$1
-    DP_IP1=$2
-    PRIORITY=$3
-    DP_HOST2=$4
-    DP_HOST3=$5
+    NUM_OF_DPS=$1
+    CUR_DP_SEQ=$2
 
-    echo "====================================================================================="
-    echo "Deploying APIC config to DP gateway" $DP_HOST1
-    echo "====================================================================================="
+    echo -e $BLUE"====================================================================================="
+    echo -e "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    echo -e "====================================================================================="$NC
 
-    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_ROOTCA_CERT_FILENAME $KEYS_DIR
-    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_INTERCA_CERT_FILENAME $KEYS_DIR
-    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_CERT_FILENAME $KEYS_DIR
-    # somaUploadFile $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default" "sharedcert" $DP_CRYPTO_DP_PRIVKEY_FILENAME $KEYS_DIR
+    CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
+    CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
+    CUR_DP_SOMA_URL="$(getIndirectValue DP_SOMA_URL_SERVER $CUR_DP_SEQ)"
 
-    # somaCreateHostAlias $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_SERVER1_MGMT_HOST_ALIAS $DP_IP1
-    # somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    # somaCreateDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    # somaUpdateTimeZone $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL
-    # somaSaveDomainConfiguration $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL "default"
+    if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
+        echo -e $PURPLE"Root CA certificate was not provided in the configuration and will not be configured."$NC
+    else
+        somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_ROOTCA_CERT_FILENAME
+    fi
 
-    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_ROOTCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_ROOTCA_CERT_FILENAME}"
-    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_INTERCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_INTERCA_CERT_FILENAME}"
-    # somaCreateCryptoCert $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_CERT_OBJ "sharedcert:///${DP_CRYPTO_DP_CERT_FILENAME}"
-    # somaCreateCryptoKey $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_KEY_OBJ "sharedcert:///${DP_CRYPTO_DP_PRIVKEY_FILENAME}"
-    # somaCreateCryptoIdCred $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_IDCRED_OBJ
-    # somaCreateSslServer $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_SERVER_PROFILE_OBJ
-    # somaCreateSslClient $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ
+    if [ -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
+        echo -e $PURPLE"Intermediate CA certificate was not provided in the configuration and will not be configured."$NC
+    else
+        somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
+    fi
 
-set -x
-# if not cluster - dp_host2 and dp_host3 are empty
-    somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_GWD 16380 26380 $PRIORITY
-set +x
-exit
-    somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_API_PROBE 16382 26382 $PRIORITY
-    somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_API_RATE_LIMIT 16383 26383 $PRIORITY
-    somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_SUBS 16384 26384 $PRIORITY
-    somaCreateGatewayPeering $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_HOST2 $DP_HOST3 $DP_PEERING_MGR_API_TOKENS 16385 26385 $PRIORITY
-    somaCreateGatewayPeeringManager $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_PEERING_MGR_API_RATE_LIMIT $DP_PEERING_MGR_SUBS
-    somaCreateConfigSequence $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    somaCreateApiConnectGatewayService $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    somaCreateApicSecurityTokenManager $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
-    somaSaveDomainConfiguration $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_SOMA_URL $DP_APIC_DOMAIN_NAME
+    somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_CERT_FILENAME
+    somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_PRIVKEY_FILENAME
+
+    CUR_DP_MNG_HOST_ALIAS="$(getIndirectValue DP_MGMT_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    CUR_DP_MNG_IP="$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    somaCreateHostAlias $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $CUR_DP_MNG_HOST_ALIAS $CUR_DP_MNG_IP
+
+    CUR_DP_DATA_HOST_ALIAS="$(getIndirectValue DP_DATA_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    CUR_DP_DATA_IP="$(getIndirectValue DP_DATA_IP_SERVER $CUR_DP_SEQ)"
+    somaCreateHostAlias $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $CUR_DP_DATA_HOST_ALIAS $CUR_DP_DATA_IP
+
+    somaUpdateTimeZone $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_TIMEZONE
+    somaCreateDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
+    somaSaveDomainConfiguration $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
+
+    somaConfigurePasswordAlias $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_PEERING_GROUP_PASSWORD_ALIAS_OBJ $DP_PEERING_GROUP_PASSWORD
+
+    if [ ! -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
+        somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_ROOTCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_ROOTCA_CERT_FILENAME}"
+    fi
+
+    if [ ! -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
+        somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_INTERCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_INTERCA_CERT_FILENAME}"
+    fi
+
+    somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_CERT_OBJ "sharedcert:///${DP_CRYPTO_DP_CERT_FILENAME}"
+    somaCreateCryptoKey $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_KEY_OBJ "sharedcert:///${DP_CRYPTO_DP_PRIVKEY_FILENAME}"
+    somaCreateCryptoIdCred $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_IDCRED_OBJ
+    somaCreateSslServer $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_SERVER_PROFILE_OBJ
+    somaCreateSslClient $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ
+
+    CUR_DP_MGMT_ADDRESS="$(getIndirectValue DP_MGMT_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    CUR_DP_DATA_ADDRESS="$(getIndirectValue DP_DATA_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    CUR_DP_PRIORITY="$(getIndirectValue DP_GWD_PEERING_PRIORITY_SERVER $CUR_DP_SEQ)"
+    DP2_SEQ=$((($CUR_DP_SEQ+1)%3))
+    DP2_MGMT_HOSTNAME="$(getIndirectValue DP_MGMT_HOSTNAME_SERVER $DP2_SEQ)"
+    DP3_SEQ=$((($CUR_DP_SEQ+2)%3))
+    DP3_MGMT_HOSTNAME="$(getIndirectValue DP_MGMT_HOSTNAME_SERVER $DP3_SEQ)"
+
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_API_PROBE      16383 26383 $CUR_DP_PRIORITY "memory" $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_TOKENS         16385 26385 $CUR_DP_PRIORITY "local"  $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_APICGW         16380 26380 $CUR_DP_PRIORITY "memory" $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_API_RATE_LIMIT 16381 26381 $CUR_DP_PRIORITY "memory" $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_SUBS           16382 26382 $CUR_DP_PRIORITY "memory" $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeering $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP2_MGMT_HOSTNAME $DP3_MGMT_HOSTNAME $DP_PEERING_MGR_GWS_RATE_LIMIT 16384 26384 $CUR_DP_PRIORITY "memory" $CUR_DP_MGMT_ADDRESS
+    somaCreateGatewayPeeringManager $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_PEERING_MGR_APICGW $DP_PEERING_MGR_API_RATE_LIMIT $DP_PEERING_MGR_SUBS $DP_PEERING_MGR_API_PROBE $DP_PEERING_MGR_GWS_RATE_LIMIT
+    
+    somaCreateConfigSequence $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
+    somaCreateApiConnectGatewayService $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $CUR_DP_MGMT_ADDRESS $CUR_DP_DATA_ADDRESS
+
+    somaCreateApicSecurityTokenManager $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
+
+    somaConfigureApiProbe $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL 1000 60 $DP_PEERING_MGR_API_PROBE $CUR_DP_SEQ
+
+    somaSaveDomainConfiguration $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
 }
 ##################################################################################
-
-# romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD $DP_SERVER1_ROMA_URL $DP_APIC_DOMAIN_NAME
-deployApicConfigToDataPower $DP_SERVER1_MGMT_HOSTNAME $DP_SERVER1_MGMT_IP $DP_GWD_PEERING_PRIORITY_SERVER1 $DP_SERVER2_MGMT_HOSTNAME $DP_SERVER3_MGMT_HOSTNAME
-
-# romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER2_MGMT_HOSTNAME}:${dp_roma_port}" $DP_APIC_DOMAIN_NAME
-# deployApicConfigToDataPower $DP_SERVER2_MGMT_HOSTNAME $DP_SERVER2_MGMT_IP $DP_GWD_PEERING_PRIORITY_SERVER2 $DP_SERVER1_MGMT_HOSTNAME $DP_SERVER3_MGMT_HOSTNAME
-
-# romaDeleteDomain $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER3_MGMT_HOSTNAME}:${dp_roma_port}" $DP_APIC_DOMAIN_NAME
-# deployApicConfigToDataPower $DP_SERVER3_MGMT_HOSTNAME $DP_SERVER3_MGMT_IP $DP_GWD_PEERING_PRIORITY_SERVER3 $DP_SERVER1_MGMT_HOSTNAME $DP_SERVER2_MGMT_HOSTNAME
-
-# exit
-
+# Verify APIC config deployment
 ##################################################################################
-# DPOD config
+verifyApicConfigDeployment() {
+    CUR_DP_SEQ=$1
+
+    echo -e $BLUE"====================================================================================="
+    echo -e "Verifying APIC config on DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    echo -e "====================================================================================="$NC
+
+    CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
+    CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
+    CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+
+    CUR_DP_MNG_HOST_ALIAS="$(getIndirectValue DP_MGMT_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL "default" "HostAlias" $CUR_DP_MNG_HOST_ALIAS
+
+    CUR_DP_DATA_HOST_ALIAS="$(getIndirectValue DP_DATA_HOST_ALIAS_SERVER $CUR_DP_SEQ)"
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL "default" "HostAlias" $CUR_DP_DATA_HOST_ALIAS
+
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL "default" "Domain" $DP_APIC_DOMAIN_NAME
+
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_ROOTCA_CERT_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_INTERCA_CERT_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_DP_CERT_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoKey" $DP_CRYPTO_DP_KEY_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoIdentCred" $DP_CRYPTO_DP_IDCRED_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "SSLServerProfile" $DP_CRYPTO_SSL_SERVER_PROFILE_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "SSLClientProfile" $DP_CRYPTO_SSL_CLIENT_PROFILE_OBJ
+
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_APICGW
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_API_RATE_LIMIT
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_SUBS
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_API_PROBE
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_GWS_RATE_LIMIT
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeeringManager" "default"
+    
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "ConfigSequence" $DP_CONFIG_SEQUENCE_OBJ
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "APIConnectGatewayService" "default"
+
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $DP_PEERING_MGR_TOKENS
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "APISecurityTokenManager" "default"
+
+    romaCheckDpOjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "APIDebugProbe" "default"
+}
 ##################################################################################
-set -x
-# romaCreateUser $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER1_MGMT_HOSTNAME}:${dp_roma_port}" "dpod1" "newpassword" "privileged"
-# romaCreateUser $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER2_MGMT_HOSTNAME}:${dp_roma_port}" "dpod" "newpassword" "privileged"
-# romaCreateUser $DP_SERVER1_USER_NAME $DP_SERVER1_USER_PASSWORD "https://${DP_SERVER3_MGMT_HOSTNAME}:${dp_roma_port}" "dpod" "newpassword" "privileged"
+# Main section
+##################################################################################
+if [ -z "$1" ]; then
+    echo "Syntax error, aborting."
+    echo "  Provide configuration filename as a parameter"
+    exit
+fi
 
+if [ ! -f ./$1 ]; then
+    echo "Configuration file $1 not found, aborting."
+    exit
+fi
 
+. $1
 
+cd $PROJECT_DIR
+echo =====================================================================================
+echo "Configuring the API Connect Gateway Service on DataPower gateways"
+declare -a NUM_OF_DPS="$(numOfDpGateways)"
+
+# romaGetDpOjectOpState $DP_USER_NAME_SERVER0 $DP_USER_PASSWORD_SERVER0 $DP_ROMA_URL_SERVER0 $DP_APIC_DOMAIN_NAME "GatewayPeering" "default-gateway-peering"
+
+echo "Number of DataPower gateways: "$NUM_OF_DPS
+
+for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+    CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
+    CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
+    CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+
+    romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
+done
+
+for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+    deployApicConfigToDataPower $NUM_OF_DPS $CUR_DP_SEQ
+done
+
+for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+    verifyApicConfigDeployment $CUR_DP_SEQ
+done
+
+echo "====================================================================================="
