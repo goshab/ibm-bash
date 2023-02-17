@@ -10,7 +10,6 @@ The DataPower GWD and DataPower GW configurations are based on the same crypto k
 
 - XML Management Interface is enabled on all DataPower gateways.
 - REST Management Interface is enabled on all DataPower gateways.
-- Same credentials are used for all DataPower gateways.
 - Certificates and private key are located in the PROJECT/keys folder.
 - Fill out the configuration file and pass it as a CLI argument to the [script](08-deploy-dp.sh). Use the [provided template](00-project-template.conf).
 
