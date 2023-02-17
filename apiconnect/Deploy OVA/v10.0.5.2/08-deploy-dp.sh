@@ -1,23 +1,10 @@
 #!/bin/bash
 ##################################################################################
-# This script creates APIC confiuration on a cluster of 3 DataPower gateways.
-# 
-# Before running this script the following should be configured manually:
-# 1) XML Management Interface is enabled on all DataPower gateways.
-# 2) REST Management Interface is enabled on all DataPower gateways.
-# 3) Same credentials are used for all DataPower gateways.
-# 4) DP cert, key, inter ca, root ca located in the same folder with this script.
-# 5) Review customer configuration section bellow.
-##################################################################################
-# Tested on DataPower firmware vesions:
-#  10.0.5.2
+# This script creates API Connect confiuration on DataPower gateways.
 ##################################################################################
 # Notes:
 #  2018.4.1.9 - the SOMA request for Gateway Peering Manager object is different.
 #  x.x.x.x - Another Gateway Peering was added to Gateway Peering Manager.
-##################################################################################
-# Changes:
-#   2022-11-11 Added somaUpdateTimeZone() function to configure UTC timezone.
 ##################################################################################
 
 ##################################################################################
