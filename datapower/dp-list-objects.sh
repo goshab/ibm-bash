@@ -2,9 +2,9 @@
 ##################################################################################
 # This script lists DataPower objects across all the applicaation domains.
 # 
-# Before running this script the following should be configured manually:
-# 1) DataPower Rest Management Interface is enabled.
-# 2) Review custom configuration section bellow.
+# Prerequisites:
+# 1) Make sure the DataPower Rest Management Interface is enabled.
+# 2) Review the custom configuration section bellow.
 ##################################################################################
 # Tested on DataPower firmware versions:
 #  10.5.0.2
@@ -14,6 +14,8 @@
 
 ##################################################################################
 # Custom configuration
+# * Filling out all the arguments casuses the script to run siliently. 
+# * Leaving the arguments unset will request console input at the runtime.
 ##################################################################################
 dp_host=
 dp_roma_port=5554
@@ -53,7 +55,7 @@ fi
 
 echo
 ##################################################################################
-# List DataPower objects in a domain
+# Get a list of DataPower objects in a domain
 ##################################################################################
 dp_listObjectsInDomain() {
     DP_USER_NAME=$1
@@ -77,6 +79,7 @@ declare -a domains="$(dp_listObjectsInDomain $dp_user $dp_psw $DP_ROMA_URL defau
 if [ -z "$domains" ]; then
     echo "Could not retrieve data from the DataPower"
 else
+    echo "============ START OF REPORT ============"
     for domain in ${domains[@]}; do
         echo "Domain: $domain"
         declare -a objects="$(dp_listObjectsInDomain $dp_user $dp_psw $DP_ROMA_URL $domain $dp_object)"
@@ -88,4 +91,5 @@ else
             done
         fi
     done
+    echo "============ END OF REPORT ============"
 fi
