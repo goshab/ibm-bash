@@ -24,5 +24,5 @@ Successfully tested on:
 - Add support for TLSv13.
 - Add standard logging functions.
 - Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
-- Add Throtler configuration.
-- Refactor out SOMA and ROMA functions from 08-deploy-dp.sh into an external file.
+- Add Throttler configuration.
+- Refactor out SOMA functions from 08-deploy-dp.sh into an external file.
