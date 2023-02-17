@@ -39,10 +39,34 @@ runSoma() {
 ##################################################################################
 # Configure domain Statistics
 ##################################################################################
-        # <Statistics name="default">
-        #     <mAdminState>disabled</mAdminState>
-        #     <LoadInterval>1000</LoadInterval>
-        # </Statistics>
+somaConfigureDomainStatistics() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+    DOMAIN_NAME=$4
+
+    log_title "Configuring Statistics for $DOMAIN_NAME domain"
+
+    SOMA_REQ=$(cat <<-EOF
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
+   <soapenv:Body>
+        <dp:request domain="$DOMAIN_NAME">
+            <dp:set-config>
+                <Statistics name="default">
+                    <mAdminState>enabled</mAdminState>
+                    <LoadInterval>1000</LoadInterval>
+                </Statistics>
+            </dp:set-config>
+        </dp:request>
+    </soapenv:Body>
+</soapenv:Envelope>
+EOF
+)
+
+    # echo "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
+}
 ##################################################################################
 # Configure Throttler
 ##################################################################################

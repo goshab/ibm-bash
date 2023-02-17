@@ -152,6 +152,8 @@ deployApicConfigToDataPower() {
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
     CUR_DP_SOMA_URL="$(getIndirectValue DP_SOMA_URL_SERVER $CUR_DP_SEQ)"
     CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+    CUR_DP_MGMT_IP="$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    log_title "Working on $CUR_DP_MGMT_IP"
 
     if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
         log_info "Root CA certificate was not provided in the configuration and will not be configured"
@@ -164,6 +166,8 @@ deployApicConfigToDataPower() {
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
     fi
+
+    somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
 
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_CERT_FILENAME
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_PRIVKEY_FILENAME
@@ -180,6 +184,7 @@ deployApicConfigToDataPower() {
     somaCreateDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
     somaSaveDomainConfiguration $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
 
+    somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
     somaConfigurePasswordAlias $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_PEERING_GROUP_PASSWORD_ALIAS_OBJ $DP_PEERING_GROUP_PASSWORD
 
     if [ ! -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
