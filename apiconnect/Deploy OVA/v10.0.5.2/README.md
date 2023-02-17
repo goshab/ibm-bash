@@ -25,4 +25,3 @@ Successfully tested on:
 - Add standard logging functions.
 - Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
 - Add Throttler configuration.
-- Refactor out SOMA functions from 08-deploy-dp.sh into an external file.
