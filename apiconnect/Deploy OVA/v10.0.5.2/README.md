@@ -15,15 +15,14 @@ Successfully tested on:
 
 ## API Connect future features
 
-- Refactor out SOMA and ROMA functions from 08-deploy-dp.sh into an external file.
 - Support Management and Portal backup configuration.
 
 ## DataPower future features
 
 - Enable DP Statistics.
+- Add NTP configuration (check DP form factor).
 - Add support for TLSv13.
 - Add standard logging functions.
 - Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
-- Add NTP configuration (check DP form factor).
-- Add Statistics configuration.
 - Add Throtler configuration.
+- Refactor out SOMA and ROMA functions from 08-deploy-dp.sh into an external file.
