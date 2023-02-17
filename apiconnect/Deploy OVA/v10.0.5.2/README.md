@@ -22,6 +22,5 @@ Successfully tested on:
 - Enable DP Statistics.
 - Add NTP configuration (check DP form factor).
 - Add support for TLSv13.
-- Add standard logging functions.
 - Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
 - Add Throttler configuration.

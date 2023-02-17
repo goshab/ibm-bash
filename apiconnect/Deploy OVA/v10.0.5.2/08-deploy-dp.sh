@@ -21,6 +21,40 @@
 ##################################################################################
 
 ##################################################################################
+# log
+##################################################################################
+log_success() {
+    MSG=$1
+
+    echo -e $GREEN"$MSG"$NC
+}
+##################################################################################
+# log
+##################################################################################
+log_error() {
+    MSG=$1
+
+    echo -e $RED"$MSG"$NC
+}
+##################################################################################
+# log
+##################################################################################
+log_info() {
+    MSG=$1
+
+    echo -e $PURPLE"$MSG"$NC
+}
+##################################################################################
+# log
+##################################################################################
+log_title() {
+    MSG=$1
+
+    # echo -e $BLUE"====================================================================================="$NC
+    echo -e $BLUE"$MSG"$NC
+    # echo -e $BLUE"====================================================================================="$NC
+}
+##################################################################################
 # Calculates number of DP servers
 ##################################################################################
 numOfDpGateways(){
@@ -82,12 +116,15 @@ validateDpObjectStatus() {
     fi
 
     if [ ! "$obj_admin_state" = "enabled" ] || [ ! "$obj_op_state" = "up" ]; then
-        COLOR=$RED
+        # COLOR=$RED
+        log_error "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
     else
-        COLOR=$GREEN
+        # COLOR=$GREEN
+        # echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
+        log_success "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
     fi
 
-    echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
+    # echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
 }
 ##################################################################################
 # Get DataPower object operational state
@@ -105,13 +142,15 @@ retry() {
         if [ "$RESULT" = "up" ]; then
             break
         else
-            echo -e $PURPLE"Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"$NC
+            # echo -e $PURPLE"Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"$NC
+            log_info "Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"
             sleep $RETRY_INTERVAL
         fi
     done
 
     if [ ! "$RESULT" = "up" ]; then
-        echo -e $RED"The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"$NC
+        log_error "The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"
+        # echo -e $RED"The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"$NC
         exit
     fi
 }
@@ -122,9 +161,10 @@ deployApicConfigToDataPower() {
     NUM_OF_DPS=$1
     CUR_DP_SEQ=$2
 
-    echo -e $BLUE"====================================================================================="
-    echo -e "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-    echo -e "====================================================================================="$NC
+    # echo -e $BLUE"====================================================================================="
+    # echo -e "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    # echo -e "====================================================================================="$NC
+    # log_title "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
 
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
@@ -132,13 +172,15 @@ deployApicConfigToDataPower() {
     CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
 
     if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
-        echo -e $PURPLE"Root CA certificate was not provided in the configuration and will not be configured."$NC
+        log_info "Root CA certificate was not provided in the configuration and will not be configured"
+        # echo -e $PURPLE"Root CA certificate was not provided in the configuration and will not be configured."$NC
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_ROOTCA_CERT_FILENAME
     fi
 
     if [ -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
-        echo -e $PURPLE"Intermediate CA certificate was not provided in the configuration and will not be configured."$NC
+        log_info "Intermediate CA certificate was not provided in the configuration and will not be configured"
+        # echo -e $PURPLE"Intermediate CA certificate was not provided in the configuration and will not be configured."$NC
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
     fi
@@ -206,9 +248,10 @@ deployApicConfigToDataPower() {
 verifyApicConfigDeployment() {
     CUR_DP_SEQ=$1
 
-    echo -e $BLUE"====================================================================================="
-    echo -e "Verifying APIC config on DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-    echo -e "====================================================================================="$NC
+    log_title "Verifying APIC config on DP gateway $(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    # echo -e $BLUE"====================================================================================="
+    # echo -e "Verifying APIC config on DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
+    # echo -e "====================================================================================="$NC
 
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
@@ -244,18 +287,19 @@ verifyApicConfigDeployment() {
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "APISecurityTokenManager" "default"
 
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "APIDebugProbe" "default"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Main section
 ##################################################################################
 if [ -z "$1" ]; then
-    echo "Syntax error, aborting."
-    echo "  Provide configuration filename as a parameter"
+    log_error "Syntax error, aborting."
+    log_error "  Provide configuration filename as a parameter"
     exit
 fi
 
 if [ ! -f ./$1 ]; then
-    echo "Configuration file $1 not found, aborting."
+    log_error "Configuration file $1 not found, aborting."
     exit
 fi
 
@@ -269,6 +313,7 @@ echo "Configuring the API Connect Gateway Service on DataPower gateways"
 declare -a NUM_OF_DPS="$(numOfDpGateways)"
 
 echo "Number of DataPower gateways: "$NUM_OF_DPS
+echo =====================================================================================
 
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
@@ -285,4 +330,3 @@ done
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     verifyApicConfigDeployment $CUR_DP_SEQ
 done
-echo "====================================================================================="

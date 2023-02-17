@@ -13,14 +13,17 @@ runSoma() {
     response=$(curl -s -k -X POST -u $DP_USERNAME:$DP_PASSWORD $DP_SOMA_URL -d "${DP_SOMA_REQ}")
     analysis=$(echo $response | grep -o 'OK')
     if [ "$analysis" = "OK" ]; then
-        echo -e "Result: "$GREEN"Success"$NC
+        # echo -e "Result: "$GREEN"Success"$NC
+        log_success "Success"
         if [ "$DEBUG" = "true" ]; then
             echo Response
             echo $response
         fi
    else
-        echo -e $RED"Error, DataPower SOMA response:"$NC
-        echo -e ${response}$NC
+        # echo -e $RED"Error, DataPower SOMA response:"$NC
+        log_error "Error, DataPower SOMA response:"
+        log_error $response
+        # echo -e ${response}$NC
         exit
     fi
 }
@@ -74,9 +77,10 @@ somaUploadFile() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
+    log_title "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
+    # echo "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Crypto ID Cred
@@ -88,6 +92,7 @@ somaCreateCryptoIdCred() {
     DOMAIN_NAME=$4
     OBJ_NAME=$5
 
+    log_title "Creating Crypto Identification Credentials $OBJ_NAME"
 
     if [ ! -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
         ROOT_CA="<CA>"$DP_CRYPTO_ROOTCA_CERT_OBJ"</CA>"
@@ -116,9 +121,9 @@ somaCreateCryptoIdCred() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating crypto id credentials" $OBJ_NAME
+    # echo "Creating crypto id credentials" $OBJ_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Set UTC time zone
@@ -128,6 +133,8 @@ somaUpdateTimeZone() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     DP_TIMEZONE=$4
+
+    log_title "Setting time zone to $DP_TIMEZONE"
 
     SOMA_REQ=$(cat <<-EOF
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ma="http://www.datapower.com/schemas/management">
@@ -143,9 +150,9 @@ somaUpdateTimeZone() {
 </SOAP-ENV:Envelope>
 EOF
 )
-    echo "====================================================================================="
-    echo "Setting time zone to "$DP_TIMEZONE
+    # echo "Setting time zone to "$DP_TIMEZONE
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create API Security Token Manager
@@ -155,6 +162,8 @@ somaCreateApicSecurityTokenManager() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
+    log_title "Creating API Security Token Manager"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -172,9 +181,9 @@ somaCreateApicSecurityTokenManager() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating API Security Token Manager"
+    # echo "Creating API Security Token Manager"
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Crypto Cert
@@ -186,6 +195,8 @@ somaCreateCryptoCert() {
     DOMAIN_NAME=$4
     OBJ_NAME=$5
     FILE_NAME=$6
+
+    log_title "Creating Crypto Certificate $OBJ_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -207,9 +218,9 @@ somaCreateCryptoCert() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating crypto cert" $OBJ_NAME
+    # echo "Creating crypto cert" $OBJ_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Crypto Key
@@ -221,6 +232,8 @@ somaCreateCryptoKey() {
     DOMAIN_NAME=$4
     OBJ_NAME=$5
     FILE_NAME=$6
+
+    log_title "Creating crypto key $OBJ_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -241,9 +254,9 @@ somaCreateCryptoKey() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating crypto key" $OBJ_NAME
+    # echo "Creating crypto key" $OBJ_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Save domain configuration
@@ -253,6 +266,8 @@ somaSaveDomainConfiguration() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
+    log_title "Save domain configuration $DOMAIN_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -267,9 +282,9 @@ somaSaveDomainConfiguration() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Save domain configuration" $DOMAIN_NAME
+    # echo "Save domain configuration" $DOMAIN_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create new DataPower application domain
@@ -279,6 +294,8 @@ somaCreateDomain() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
+    log_title "Creating domain $DOMAIN_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -297,9 +314,9 @@ somaCreateDomain() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating domain" $DOMAIN_NAME
+    # echo "Creating domain" $DOMAIN_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Host Aliases
@@ -310,6 +327,8 @@ somaCreateHostAlias() {
     DP_SOMA_URL=$3
     ALIAS_NAME=$4
     IPADDRESS=$5
+
+    log_title "Creating Host Aliases $ALIAS_NAME as $IPADDRESS"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -326,9 +345,9 @@ somaCreateHostAlias() {
 </soapenv:Envelope>
 EOF
 )
-    echo "====================================================================================="
-    echo "Creating Host Aliases" $ALIAS_NAME "as" $IPADDRESS
+    # echo "Creating Host Aliases" $ALIAS_NAME "as" $IPADDRESS
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Configure NTP Service
@@ -338,6 +357,8 @@ somaConfigureNtpService() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     NTP_IP=$4
+
+    log_title "Configuring NTP Service"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -355,9 +376,9 @@ somaConfigureNtpService() {
 </soapenv:Envelope>
 EOF
 )
-    echo "====================================================================================="
-    echo "Configuring NTP Service"
+    # echo "Configuring NTP Service"
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Configure API Probe
@@ -371,8 +392,8 @@ somaConfigureApiProbe() {
     GATEWAY_PEERING=$6
     # DP_SEQ=$7
 
-    echo "====================================================================================="
-    echo "Configuring API Probe"
+    log_title "Configuring API Probe"
+    # echo "Configuring API Probe"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -395,6 +416,7 @@ EOF
     # retry $DP_SEQ $DP_APIC_DOMAIN_NAME "GatewayPeering" $GATEWAY_PEERING
 
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Configure Password Alias
@@ -406,6 +428,8 @@ somaConfigurePasswordAlias() {
     DOMAIN_NAME=$4
     OBJ_NAME=$5
     PASSWORD=$6
+
+    log_title "Configuring Password Map Alias $OBJ_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -422,9 +446,9 @@ somaConfigurePasswordAlias() {
 </soapenv:Envelope>
 EOF
 )
-    echo "====================================================================================="
-    echo "Configuring Password Map Alias "$OBJ_NAME
+    # echo "Configuring Password Map Alias "$OBJ_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create SSL/TLS Server
@@ -435,6 +459,8 @@ somaCreateSslServer() {
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     SSLSERVERPROFILE=$5
+
+    log_title "Creating SSL Server Profile $SSLSERVERPROFILE"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -516,9 +542,9 @@ somaCreateSslServer() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating SSL Server Profile" $SSLSERVERPROFILE
+    # echo "Creating SSL Server Profile" $SSLSERVERPROFILE
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create SSL/TLS Server
@@ -529,6 +555,8 @@ somaCreateSslClient() {
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
     SSLCLIENTPROFILE=$5
+
+    log_title "Creating SSL Client Profile $SSLCLIENTPROFILE"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -613,9 +641,9 @@ somaCreateSslClient() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating SSL Client Profile" $SSLCLIENTPROFILE
+    # echo "Creating SSL Client Profile" $SSLCLIENTPROFILE
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Gateway Peering
@@ -633,6 +661,8 @@ somaCreateGatewayPeering() {
     PRIORITY=${10}
     LOCATION=${11}
     DP_MGMT_ADDRESS=${12}
+
+    log_title "Creating Gateway Peering $PEERING_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -662,9 +692,9 @@ somaCreateGatewayPeering() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating Gateway Peering" $PEERING_NAME
+    # echo "Creating Gateway Peering" $PEERING_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Gateway Peering Manager
@@ -679,6 +709,8 @@ somaCreateGatewayPeeringManager() {
     PEERING_MGR_SUBS=$7
     PEERING_MGR_API_PROBE=$8
     PEERING_MGR_GWS_RATE_LIMIT=$9
+
+    log_title "Creating Gateway Peering Manager"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
@@ -700,9 +732,9 @@ somaCreateGatewayPeeringManager() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating Gateway Peering Manager"
+    # echo "Creating Gateway Peering Manager"
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create Config Sequence
@@ -712,6 +744,9 @@ somaCreateConfigSequence() {
     DP_PASSWORD=$2
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
+
+    log_title "Creating Config Sequence"
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -739,9 +774,9 @@ somaCreateConfigSequence() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating Config Sequence"
+    # echo "Creating Config Sequence"
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create API Connect Gateway Service
@@ -754,6 +789,7 @@ somaCreateApiConnectGatewayService() {
     DP_MGMT_ADDRESS=$5
     DP_DATA_ADDRESS=$6
 
+    log_title "Creating API Connect Gateway Service"
                     # <GatewayPeering>$DP_PEERING_MGR_APICGW</GatewayPeering>
                     # <GatewayPeering>none</GatewayPeering>
     SOMA_REQ=$(cat <<-EOF
@@ -783,7 +819,7 @@ somaCreateApiConnectGatewayService() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating API Connect Gateway Service"
+    # echo "Creating API Connect Gateway Service"
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
 }

@@ -57,9 +57,10 @@ romaDeleteDomain() {
     DP_ROMA_URL=$3
     DOMAIN_NAME=$4
 
-    echo "====================================================================================="
-    echo "Deleting application domain "$DOMAIN_NAME" on "$DP_ROMA_URL
+    log_title "Deleting application domain $DOMAIN_NAME on $DP_ROMA_URL"
+    # echo "Deleting application domain "$DOMAIN_NAME" on "$DP_ROMA_URL
     runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" ""
+    echo "====================================================================================="
 }
 ##################################################################################
 # Create new DataPower user
@@ -72,8 +73,8 @@ romaCreateUser() {
     NEW_USER_PSW=$5
     NEW_USER_ACCESS=$6
 
-    echo "====================================================================================="
-    echo "Creating user" $NEW_USER_NAME
+    log_title "Creating user $NEW_USER_NAME"
+    # echo "Creating user" $NEW_USER_NAME
     ROMA_REQ=$(cat <<-EOF
 {
     "User": {
@@ -87,5 +88,6 @@ EOF
 )
 
     runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
+    echo "====================================================================================="
 }
 ##################################################################################
