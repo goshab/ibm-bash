@@ -50,9 +50,7 @@ log_info() {
 log_title() {
     MSG=$1
 
-    # echo -e $BLUE"====================================================================================="$NC
     echo -e $BLUE"$MSG"$NC
-    # echo -e $BLUE"====================================================================================="$NC
 }
 ##################################################################################
 # Calculates number of DP servers
@@ -91,12 +89,13 @@ validateDpObjectStatus() {
     OBJECT_TYPE=$5
     OBJECT_NAME=$6
 
-    CLI1='curl -s -k -u '$DP_USERNAME':'$DP_PASSWORD' -X GET '$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
+    CLI1=$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
     if [ "$DEBUG" = "true" ]; then
         echo "curl CLI:"
         echo $CLI1
     fi
-    curl_response=$(eval $CLI1)
+    declare -a curl_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${CLI1}" "GET" "")"
+
     if [ "$DEBUG" = "true" ]; then
         echo "curl response:"
         echo $curl_response | jq .
@@ -108,7 +107,6 @@ validateDpObjectStatus() {
     obj_op_state=$(eval $CLI22)
     
     if [ -z "$obj_admin_state" ]; then
-        # CLI3="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | "'$OBJECT_TYPE' " + .name +" is "+ .mAdminState + ", opstate="+.state.opstate'\'''
         CLI31="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
         CLI32="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
         obj_admin_state=$(eval $CLI31)
@@ -116,15 +114,10 @@ validateDpObjectStatus() {
     fi
 
     if [ ! "$obj_admin_state" = "enabled" ] || [ ! "$obj_op_state" = "up" ]; then
-        # COLOR=$RED
         log_error "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
     else
-        # COLOR=$GREEN
-        # echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
         log_success "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
     fi
-
-    # echo -e $COLOR"$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"$NC
 }
 ##################################################################################
 # Get DataPower object operational state
@@ -142,7 +135,6 @@ retry() {
         if [ "$RESULT" = "up" ]; then
             break
         else
-            # echo -e $PURPLE"Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"$NC
             log_info "Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"
             sleep $RETRY_INTERVAL
         fi
@@ -150,7 +142,6 @@ retry() {
 
     if [ ! "$RESULT" = "up" ]; then
         log_error "The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"
-        # echo -e $RED"The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"$NC
         exit
     fi
 }
@@ -161,11 +152,6 @@ deployApicConfigToDataPower() {
     NUM_OF_DPS=$1
     CUR_DP_SEQ=$2
 
-    # echo -e $BLUE"====================================================================================="
-    # echo -e "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-    # echo -e "====================================================================================="$NC
-    # log_title "Deploying APIC config to DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
     CUR_DP_SOMA_URL="$(getIndirectValue DP_SOMA_URL_SERVER $CUR_DP_SEQ)"
@@ -173,14 +159,12 @@ deployApicConfigToDataPower() {
 
     if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
         log_info "Root CA certificate was not provided in the configuration and will not be configured"
-        # echo -e $PURPLE"Root CA certificate was not provided in the configuration and will not be configured."$NC
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_ROOTCA_CERT_FILENAME
     fi
 
     if [ -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
         log_info "Intermediate CA certificate was not provided in the configuration and will not be configured"
-        # echo -e $PURPLE"Intermediate CA certificate was not provided in the configuration and will not be configured."$NC
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
     fi
@@ -249,9 +233,6 @@ verifyApicConfigDeployment() {
     CUR_DP_SEQ=$1
 
     log_title "Verifying APIC config on DP gateway $(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-    # echo -e $BLUE"====================================================================================="
-    # echo -e "Verifying APIC config on DP gateway" "$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
-    # echo -e "====================================================================================="$NC
 
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
@@ -315,13 +296,13 @@ declare -a NUM_OF_DPS="$(numOfDpGateways)"
 echo "Number of DataPower gateways: "$NUM_OF_DPS
 echo =====================================================================================
 
-for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
-    CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
-    CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
-    CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+# for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+#     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
+#     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
+#     CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
 
-    romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
-done
+#     romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
+# done
 
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     deployApicConfigToDataPower $NUM_OF_DPS $CUR_DP_SEQ

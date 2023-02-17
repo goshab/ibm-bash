@@ -19,10 +19,7 @@ runRoma() {
     fi
 
     response=$(eval $CLI)
-    if [ "$DEBUG" = "true" ]; then
-        echo Response
-        echo $response | jq .
-    fi
+    echo $response
 }
 ##################################################################################
 # Get DataPower object operational state
@@ -59,7 +56,8 @@ romaDeleteDomain() {
 
     log_title "Deleting application domain $DOMAIN_NAME on $DP_ROMA_URL"
     # echo "Deleting application domain "$DOMAIN_NAME" on "$DP_ROMA_URL
-    runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" ""
+    declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" "")"
+    echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
@@ -87,7 +85,21 @@ romaCreateUser() {
 EOF
 )
 
-    runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
+    # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
+    declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}")"
+    echo RESPONSE=$RESPONSE
     echo "====================================================================================="
+}
+##################################################################################
+# Get DataPower platform details
+##################################################################################
+romaGetPlatformDetails() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_ROMA_URL=$3
+
+    # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" ""
+    declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
+    echo RESPONSE=$RESPONSE
 }
 ##################################################################################
