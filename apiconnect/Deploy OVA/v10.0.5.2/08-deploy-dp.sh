@@ -168,6 +168,7 @@ deployApicConfigToDataPower() {
     fi
 
     somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
+    somaConfigureThrottler $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL 
 
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_CERT_FILENAME
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_PRIVKEY_FILENAME
@@ -297,13 +298,13 @@ declare -a NUM_OF_DPS="$(numOfDpGateways)"
 echo "Number of DataPower gateways: "$NUM_OF_DPS
 echo =====================================================================================
 
-# for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
-#     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
-#     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
-#     CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+    CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
+    CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
+    CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
 
-#     romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
-# done
+    romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
+done
 
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     deployApicConfigToDataPower $NUM_OF_DPS $CUR_DP_SEQ

@@ -70,12 +70,38 @@ EOF
 ##################################################################################
 # Configure Throttler
 ##################################################################################
-        # <Throttler name="Throttler">
-        #     <mAdminState>enabled</mAdminState>
-        #     <Mode>on</Mode>
-        #     <ThrottleAt>20</ThrottleAt>
-        #     <TerminateAt>5</TerminateAt>
-        # </Throttler>
+somaConfigureThrottler() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_SOMA_URL=$3
+
+    log_title "Configuring Throttler"
+
+    SOMA_REQ=$(cat <<-EOF
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
+   <soapenv:Body>
+        <dp:request domain="default">
+            <dp:set-config>
+                <Throttler name="Throttler">
+                    <mAdminState>enabled</mAdminState>
+                    <ThrottleAt>20</ThrottleAt>
+                    <TerminateAt>5</TerminateAt>
+                    <Statistics>on</Statistics>
+                    <LogLevel>debug</LogLevel>
+                    <EnvironmentalLog>on</EnvironmentalLog>
+                    <BacklogSize>0</BacklogSize>
+                    <BacklogTimeout>30</BacklogTimeout>
+                </Throttler>
+            </dp:set-config>
+        </dp:request>
+    </soapenv:Body>
+</soapenv:Envelope>
+EOF
+)
+
+    runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
+    echo "====================================================================================="
+}
 ##################################################################################
 # Upload file
 ##################################################################################
