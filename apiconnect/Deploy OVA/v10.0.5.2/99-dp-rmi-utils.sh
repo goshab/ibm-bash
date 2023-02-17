@@ -99,7 +99,7 @@ romaGetPlatformDetails() {
     DP_ROMA_URL=$3
 
     # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" ""
-    declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
-    echo RESPONSE=$RESPONSE
+    declare -a rmi_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
+    echo $rmi_response
 }
 ##################################################################################

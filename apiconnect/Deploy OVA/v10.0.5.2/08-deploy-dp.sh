@@ -89,26 +89,22 @@ validateDpObjectStatus() {
     OBJECT_TYPE=$5
     OBJECT_NAME=$6
 
-    CLI1=$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
-    if [ "$DEBUG" = "true" ]; then
-        echo "curl CLI:"
-        echo $CLI1
-    fi
-    declare -a curl_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${CLI1}" "GET" "")"
+    DP_ROMA_URL_CUSTOM=$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
+    declare -a rmi_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL_CUSTOM}" "GET" "")"
 
     if [ "$DEBUG" = "true" ]; then
-        echo "curl response:"
-        echo $curl_response | jq .
+        echo "RMI response:"
+        echo $rmi_response | jq .
     fi
 
-    CLI21="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
-    CLI22="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+    CLI21="echo "\'$rmi_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
+    CLI22="echo "\'$rmi_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
     obj_admin_state=$(eval $CLI21)
     obj_op_state=$(eval $CLI22)
     
     if [ -z "$obj_admin_state" ]; then
-        CLI31="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
-        CLI32="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
+        CLI31="echo "\'$rmi_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
+        CLI32="echo "\'$rmi_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
         obj_admin_state=$(eval $CLI31)
         obj_op_state=$(eval $CLI32)
     fi
