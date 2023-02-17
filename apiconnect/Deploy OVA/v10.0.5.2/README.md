@@ -19,7 +19,6 @@ Successfully tested on:
 
 ## DataPower future features
 
-- Enable DP Statistics.
 - Add NTP configuration (check DP form factor).
 - Add support for TLSv13.
 - Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
