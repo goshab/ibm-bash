@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This set of scripts is used to automate API Connect v10 deployment on VMWare.
+This set of scripts is used to automate API Connect deployment on VMWare.
 The Gateway is setup with a shared ETH for management and data traffic.
 The Gateway GWD and GW configuration is based on the same crypto keys.
 
@@ -10,13 +10,20 @@ The Gateway GWD and GW configuration is based on the same crypto keys.
 
 Successfully tested on:
 
-1. API Connect 10.0.5.2, standalone.
+- API Connect 10.0.5.2, standalone.
+- DataPower 10.0.5.2, standalone and 3-node cluster.
 
-## Future features
+## API Connect future features
 
-1. Pass env.conf file as an external parameter.
-2. Refactor out SOMA and ROMA functions from 08-deploy-dp.sh into an external file.
-3. Refactor out the 08-deploy-dp.sh custom configuration section to env.conf file.
-4. Support multiple ETH interfaces for separate management and data traffic (certs).
-5. Support Management and Portal backup configuration.
-6. Enable DP Statistics
+- Refactor out SOMA and ROMA functions from 08-deploy-dp.sh into an external file.
+- Support Management and Portal backup configuration.
+
+## DataPower future features
+
+- Enable DP Statistics.
+- Add support for TLSv13.
+- Add standard logging functions.
+- Add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
+- Add NTP configuration (check DP form factor).
+- Add Statistics configuration.
+- Add Throtler configuration.
