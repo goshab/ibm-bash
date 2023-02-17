@@ -19,9 +19,6 @@
 # Changes:
 #   2022-11-11 Added somaUpdateTimeZone() function to configure UTC timezone.
 ##################################################################################
-# RFE
-#   Add support for TLSv13
-##################################################################################
 
 ##################################################################################
 # Calculates number of DP servers
@@ -71,30 +68,6 @@ runSoma() {
         echo -e $RED"Error, DataPower SOMA response:"$NC
         echo -e ${response}$NC
         exit
-    fi
-}
-##################################################################################
-# runSoma
-##################################################################################
-runRoma() {
-    DP_USERNAME=$1
-    DP_PASSWORD=$2
-    DP_ROMA_URL=$3
-    HTTP_METHOD=$4
-    DP_ROMA_REQ=$5
-
-    CLI="curl -s -k -u $DP_USERNAME:$DP_PASSWORD -X $HTTP_METHOD $DP_ROMA_URL"
-    if [ ! -z "$DP_ROMA_REQ" ]; then
-        CLI=$CLI" -d "\'${DP_ROMA_REQ}\'
-    fi
-    if [ "$DEBUG" = "true" ]; then
-        echo CLI=$CLI
-    fi
-
-    response=$(eval $CLI)
-    if [ "$DEBUG" = "true" ]; then
-        echo Response
-        echo $response | jq .
     fi
 }
 ##################################################################################
@@ -440,17 +413,6 @@ somaConfigureApiProbe() {
 EOF
 )
 
-    # DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $DP_SEQ)"
-    # for ((i=1; i<=10; i++)); do
-    #     declare -a OP_STATE="$(romaGetDpOjectOpState $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DP_APIC_DOMAIN_NAME "GatewayPeering" $GATEWAY_PEERING)"
-    #     if [ "$OP_STATE" = "up" ]; then
-    #         break
-    #     else
-    #         echo -e $PURPLE"Retry "$i"/10: Dependent object is not up, sleeping for 30 sec"$NC
-    #         sleep 30
-    #     fi
-    # done
-
     retry $DP_SEQ $DP_APIC_DOMAIN_NAME "GatewayPeering" $GATEWAY_PEERING
 
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
@@ -693,6 +655,9 @@ somaCreateGatewayPeering() {
     LOCATION=${11}
     DP_MGMT_ADDRESS=${12}
 
+    echo "====================================================================================="
+    echo "Creating Gateway Peering" $PEERING_NAME
+
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>
@@ -721,8 +686,6 @@ somaCreateGatewayPeering() {
 EOF
 )
 
-    echo "====================================================================================="
-    echo "Creating Gateway Peering" $PEERING_NAME
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
@@ -847,19 +810,6 @@ EOF
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
 }
 ##################################################################################
-# Delete domain
-##################################################################################
-romaDeleteDomain() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    ROMA_URL=$3
-    DOMAIN_NAME=$4
-
-    echo "====================================================================================="
-    echo "Deleting application domain "$DOMAIN_NAME" on "$ROMA_URL
-    runRoma $SOMA_USER $SOMA_PSW "${ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" ""
-}
-##################################################################################
 # Check DataPower object status
 ##################################################################################
 romaCheckDpOjectStatus() {
@@ -905,38 +855,6 @@ romaCheckDpOjectStatus() {
 ##################################################################################
 # Get DataPower object operational state
 ##################################################################################
-romaGetDpOjectOpState() {
-    DP_USERNAME=$1
-    DP_PASSWORD=$2
-    DP_ROMA_URL=$3
-    DOMAIN_NAME=$4
-    OBJECT_TYPE=$5
-    OBJECT_NAME=$6
-
-    CLI1='curl -s -k -u '$DP_USERNAME':'$DP_PASSWORD' -X GET '$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
-    if [ "$DEBUG" = "true" ]; then
-        echo "curl CLI:"
-        echo $CLI1
-    fi
-    curl_response=$(eval $CLI1)
-    if [ "$DEBUG" = "true" ]; then
-        echo "curl response:"
-        echo $curl_response | jq .
-    fi
-
-    CLI22="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
-    obj_op_state=$(eval $CLI22)
-    
-    if [ -z "$obj_op_state" ]; then
-        CLI32="echo "\'$curl_response\'' | jq -r '\''.'$OBJECT_TYPE'[] | select(.name? == "'$OBJECT_NAME'") | .state.opstate'\'''
-        obj_op_state=$(eval $CLI32)
-    fi
-
-    echo $obj_op_state
-}
-##################################################################################
-# Get DataPower object operational state
-##################################################################################
 retry() {
     DP_SEQ=$1
     DP_APIC_DOMAIN_NAME=$2
@@ -961,35 +879,6 @@ retry() {
         echo -e $RED"The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"$NC
         exit
     fi
-}
-##################################################################################
-# Create user
-#   NEW_USER_ACCESS:
-#       privileged
-##################################################################################
-romaCreateUser() {
-    SOMA_USER=$1
-    SOMA_PSW=$2
-    ROMA_URL=$3
-    NEW_USER_NAME=$4
-    NEW_USER_PSW=$5
-    NEW_USER_ACCESS=$6
-
-    ROMA_REQ=$(cat <<-EOF
-{
-    "User": {
-        "mAdminState" : "enabled",
-        "name" : "$NEW_USER_NAME",
-        "Password": "$NEW_USER_PSW",
-        "AccessLevel" : "$NEW_USER_ACCESS"
-    }
-}
-EOF
-)
-    echo "====================================================================================="
-    echo "Creating user" $NEW_USER_NAME
-    # curl -k -u $SOMA_USER:$SOMA_PSW -X PUT "${ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" -d "${ROMA_REQ}"
-    runRoma $SOMA_USER $SOMA_PSW "${ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
 }
 ##################################################################################
 # Deploy APIC config to DP gateway
@@ -1134,13 +1023,12 @@ if [ ! -f ./$1 ]; then
 fi
 
 . $1
+. 99-dp-rmi-utils.sh
 
 cd $PROJECT_DIR
 echo =====================================================================================
 echo "Configuring the API Connect Gateway Service on DataPower gateways"
 declare -a NUM_OF_DPS="$(numOfDpGateways)"
-
-# romaGetDpOjectOpState $DP_USER_NAME_SERVER0 $DP_USER_PASSWORD_SERVER0 $DP_ROMA_URL_SERVER0 $DP_APIC_DOMAIN_NAME "GatewayPeering" "default-gateway-peering"
 
 echo "Number of DataPower gateways: "$NUM_OF_DPS
 
