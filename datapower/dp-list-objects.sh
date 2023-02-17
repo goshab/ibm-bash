@@ -64,13 +64,10 @@ dp_listObjectsInDomain() {
     DOMAIN_NAME=$4
     OBJECT_NAME=$5
 
-    response=$(curl -s -k -u $DP_USER_NAME:$DP_USER_PASSWORD -X GET ${ROMA_URL}/mgmt/config/$DOMAIN_NAME/$OBJECT_NAME)
-    objects=$(echo $response | jq -r ".${OBJECT_NAME}?.name?")
-
-    if [ "$objects" = "null" ] || [ "$objects" = "" ]; then
-        objects=$(echo $response | jq -r ".${OBJECT_NAME}[]?.name?")
+    objects=$(curl -s -k -u $DP_USER_NAME:$DP_USER_PASSWORD -X GET ${ROMA_URL}/mgmt/config/$DOMAIN_NAME/$OBJECT_NAME | jq -r ".${OBJECT_NAME}[]?.name?")
+    if [ "$objects" = "null" ]; then
+        exit
     fi
-
     echo $objects
 }
 
