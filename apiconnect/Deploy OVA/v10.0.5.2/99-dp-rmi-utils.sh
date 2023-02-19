@@ -57,7 +57,7 @@ romaDeleteDomain() {
     log_title "Deleting application domain $DOMAIN_NAME on $DP_ROMA_URL"
     # echo "Deleting application domain "$DOMAIN_NAME" on "$DP_ROMA_URL
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" "")"
-    echo RESPONSE=$RESPONSE
+    # echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
@@ -87,7 +87,7 @@ EOF
 
     # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}")"
-    echo RESPONSE=$RESPONSE
+    # echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
