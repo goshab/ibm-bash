@@ -127,7 +127,7 @@ somaUploadFile() {
 EOF
 )
 
-    log_title "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
+    log_title "Uploading $LOCAL_FOLDER/$FILE_NAME file to $DEST_FILE_PATH"
     # echo "Uploading $LOCAL_FOLDER/$FILE_NAME file to" $DEST_FILE_PATH
     runSoma $DP_USERNAME $DP_PASSWORD $DP_SOMA_URL "${SOMA_REQ}"
     echo "====================================================================================="
@@ -787,7 +787,7 @@ EOF
     echo "====================================================================================="
 }
 ##################################################################################
-# Create Config Sequence
+# Create Configuration Sequence
 ##################################################################################
 somaCreateConfigSequence() {
     DP_USERNAME=$1
@@ -795,7 +795,7 @@ somaCreateConfigSequence() {
     DP_SOMA_URL=$3
     DOMAIN_NAME=$4
 
-    log_title "Creating Config Sequence"
+    log_title "Creating Configuration Sequence"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">

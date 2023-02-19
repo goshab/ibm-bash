@@ -98,6 +98,7 @@ validateDpObjectStatus() {
 
     if [ ! "$obj_admin_state" = "enabled" ] || [ ! "$obj_op_state" = "up" ]; then
         log_error "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
+        retry $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DOMAIN_NAME $OBJECT_TYPE $OBJECT_NAME
     else
         log_success "$OBJECT_TYPE $OBJECT_NAME: admin_state=$obj_admin_state op_state=$obj_op_state"
     fi
@@ -116,15 +117,16 @@ retry() {
     for ((i=1; i<=$RETRY_MAX; i++)); do
         declare -a RESULT="$(romaGetDpOjectOpState $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DP_APIC_DOMAIN_NAME $DP_OBJECT_TYPE $DP_OBJECT_NAME)"
         if [ "$RESULT" = "up" ]; then
+            log_success "The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is up"
             break
         else
-            log_info "Retry "$i"/$RETRY_MAX: The dependant object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"
+            log_info "Retry "$i"/$RETRY_MAX: The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"
             sleep $RETRY_INTERVAL
         fi
     done
 
     if [ ! "$RESULT" = "up" ]; then
-        log_error "The dependent object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"
+        log_error "The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up, aborting"
         exit
     fi
 }
@@ -142,6 +144,9 @@ deployApicConfigToDataPower() {
     CUR_DP_MGMT_IP="$(getIndirectValue DP_MGMT_IP_SERVER $CUR_DP_SEQ)"
     log_title "Working on $CUR_DP_MGMT_IP"
 
+    somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
+    somaConfigureThrottler $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL 
+
     if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
         log_info "Root CA certificate was not provided in the configuration and will not be configured"
     else
@@ -153,9 +158,6 @@ deployApicConfigToDataPower() {
     else
         somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
     fi
-
-    somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
-    somaConfigureThrottler $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL 
 
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_CERT_FILENAME
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_PRIVKEY_FILENAME
