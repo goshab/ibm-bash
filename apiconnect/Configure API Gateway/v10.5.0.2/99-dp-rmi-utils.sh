@@ -81,8 +81,7 @@ romaDeleteDomain() {
     if [ "$http_code" = "200" ]; then
         log_success "Success"
     else
-        text=$(echo $RESPONSE | jq -r .)
-        log_info "$text"
+        log_info "$(echo $RESPONSE | jq -r .)"
     fi
 
     echo "====================================================================================="
