@@ -1,18 +1,5 @@
 # API Connect OVA form factor deployment
 
-## Introduction
-
-This set of scripts is used to automate API Connect deployment on VMWare.
-The Gateway setup supports separete ETH interfaces for management and data traffic.
-The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the cert can be CA-signed or self-signed).
-
-## DataPower prerequisites
-
-- XML Management Interface is enabled on all DataPower gateways.
-- REST Management Interface is enabled on all DataPower gateways.
-- Certificates and private key need to be located in the $PROJECT_DIR/$KEYS_DIR folder.
-- Fill out the configuration file and pass it as a CLI argument to the [script](08-deploy-dp.sh). Use the [provided template](00-project-template.conf).
-
 ## Support
 
 Successfully tested on:
@@ -20,9 +7,26 @@ Successfully tested on:
 - API Connect 10.0.5.2, standalone.
 - DataPower 10.0.5.2, standalone and 3-node cluster.
 
+## API Connect
+
+This set of scripts is used to automate API Connect deployment on VMWare.
+
 ## API Connect future features
 
 - Support Management and Portal backup configuration.
+
+## DataPower
+
+This set of scripts automates API Connect Gateway v6 configuration on DataPower.
+The Gateway setup supports separete ETH interfaces for management and data traffic.
+The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the cert can be CA-signed or self-signed).
+
+### DataPower prerequisites
+
+- XML Management Interface is enabled on all DataPower gateways.
+- REST Management Interface is enabled on all DataPower gateways.
+- Certificates and private key need to be located in the $PROJECT_DIR/$KEYS_DIR folder.
+- Fill out the configuration file and pass it as a CLI argument to the [script](08-deploy-dp.sh). Use the [provided template](00-project-template.conf).
 
 ## DataPower future features and know limitations
 
