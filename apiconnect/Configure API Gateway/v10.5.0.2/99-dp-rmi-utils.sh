@@ -112,7 +112,13 @@ EOF
 )
 
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}")"
-    echo RESPONSE=$RESPONSE
+    http_code=$(echo $RESPONSE | jq .http_code)
+    if [ "$http_code" = "201" ]; then
+        log_success "Success"
+    else
+        log_info "$(echo $RESPONSE | jq -r .)"
+    fi
+    # echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
