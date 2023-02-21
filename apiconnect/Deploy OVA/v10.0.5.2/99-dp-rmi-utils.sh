@@ -60,9 +60,8 @@ romaDeleteDomain() {
     DOMAIN_NAME=$4
 
     log_title "Deleting application domain $DOMAIN_NAME on $DP_ROMA_URL"
-    # echo "Deleting application domain "$DOMAIN_NAME" on "$DP_ROMA_URL
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/Domain/${DOMAIN_NAME}" "DELETE" "")"
-    # echo RESPONSE=$RESPONSE
+    echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
@@ -77,7 +76,6 @@ romaCreateUser() {
     NEW_USER_ACCESS=$6
 
     log_title "Creating user $NEW_USER_NAME"
-    # echo "Creating user" $NEW_USER_NAME
     ROMA_REQ=$(cat <<-EOF
 {
     "User": {
@@ -91,7 +89,6 @@ romaCreateUser() {
 EOF
 )
 
-    # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}")"
     echo RESPONSE=$RESPONSE
     echo "====================================================================================="
@@ -104,7 +101,6 @@ romaGetPlatformDetails() {
     DP_PASSWORD=$2
     DP_ROMA_URL=$3
 
-    # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" ""
     declare -a rmi_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
     echo $rmi_response
 }
