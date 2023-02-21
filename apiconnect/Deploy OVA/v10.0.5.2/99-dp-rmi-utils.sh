@@ -1,6 +1,11 @@
 #!/bin/bash
 
 ##################################################################################
+# Reference:
+# https://www.ibm.com/docs/en/datapower-gateway/10.5?topic=interface-samples-that-use-rest-management
+##################################################################################
+
+##################################################################################
 # runRoma
 ##################################################################################
 runRoma() {
@@ -79,7 +84,8 @@ romaCreateUser() {
         "mAdminState" : "enabled",
         "name" : "$NEW_USER_NAME",
         "Password": "$NEW_USER_PSW",
-        "AccessLevel" : "$NEW_USER_ACCESS"
+        "AccessLevel" : "$NEW_USER_ACCESS",
+        "SuppressPasswordChange" : "on"
     }
 }
 EOF
@@ -87,7 +93,7 @@ EOF
 
     # runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}"
     declare -a RESPONSE="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/config/default/User/${NEW_USER_NAME}" "PUT" "${ROMA_REQ}")"
-    # echo RESPONSE=$RESPONSE
+    echo RESPONSE=$RESPONSE
     echo "====================================================================================="
 }
 ##################################################################################
