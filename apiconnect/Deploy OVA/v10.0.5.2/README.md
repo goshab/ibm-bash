@@ -13,13 +13,14 @@ This set of scripts is used to automate API Connect deployment on VMWare.
 
 ## API Connect future features
 
-- Support Management and Portal backup configuration.
+- Add support for Management backup configuration.
+- Add support for Portal backup configuration.
 
 ## DataPower
 
-This set of scripts automates API Connect Gateway v6 configuration on DataPower.
-The Gateway setup supports separete ETH interfaces for management and data traffic.
-The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the cert can be CA-signed or self-signed).
+- This set of scripts automates API Connect Gateway v6 configuration on DataPower.
+- The Gateway setup supports separete ETH interfaces for management and data traffic.
+- The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the cert can be CA-signed or self-signed).
 
 ### DataPower prerequisites
 
