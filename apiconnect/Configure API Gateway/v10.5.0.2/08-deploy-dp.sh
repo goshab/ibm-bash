@@ -19,11 +19,13 @@ validateDpObjectStatus() {
     OBJECT_NAME=$6
 
     DP_ROMA_URL_CUSTOM=$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
-    declare -a rmi_response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL_CUSTOM}" "GET" "")"
+    declare -a response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL_CUSTOM}" "GET" "")"
+    # echo response=$response
+    rmi_response=$(echo $response | jq .http_response)
 
     if [ "$DEBUG" = "true" ]; then
         echo "RMI response:"
-        echo $rmi_response | jq .
+        echo $rmi_response | jq .rmi_response
     fi
 
     CLI21="echo "\'$rmi_response\'' | jq -r '\''.'$OBJECT_TYPE'? | select(.name? == "'$OBJECT_NAME'") | .mAdminState'\'''
