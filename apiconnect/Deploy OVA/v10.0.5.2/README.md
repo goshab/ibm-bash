@@ -10,7 +10,7 @@ The DataPower GWD and DataPower GW configurations are based on the same crypto k
 
 - XML Management Interface is enabled on all DataPower gateways.
 - REST Management Interface is enabled on all DataPower gateways.
-- Certificates and private key are located in the PROJECT/keys folder.
+- Certificates and private key need to be located in the $PROJECT_DIR/$KEYS_DIR folder.
 - Fill out the configuration file and pass it as a CLI argument to the [script](08-deploy-dp.sh). Use the [provided template](00-project-template.conf).
 
 ## Support
@@ -27,6 +27,7 @@ Successfully tested on:
 ## DataPower future features and know limitations
 
 - Add support for TLSv13.
+- Add support for dynamic list of CA certs.
 - Add NTP configuration (check DP form factor).
-- Currently supports upto to 3 DP in cluster. Solution - add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
 - Add certificate verify step after Cert obj create.
+- Add support for dynamic number for gateways. Currently supports upto to 3 DP gateways.
