@@ -131,6 +131,6 @@ romaGetPlatformDetails() {
 
     declare -a response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
     rmi_response=$(echo $response | jq .http_response)
-    echo $response | jq .http_code
+    echo $rmi_response
 }
 ##################################################################################
