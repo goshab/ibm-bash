@@ -809,8 +809,8 @@ somaCreateConfigSequence() {
                         <AccessProfileName/>
                     </Locations>
                     <MatchPattern>(.*)\.cfg$</MatchPattern>
-                    <ResultNamePattern>$1.log</ResultNamePattern>
-                    <StatusNamePattern>$1.status</StatusNamePattern>
+                    <ResultNamePattern>\$1.log</ResultNamePattern>
+                    <StatusNamePattern>\$1.status</StatusNamePattern>
                     <Watch>on</Watch>
                     <UseOutputLocation>off</UseOutputLocation>
                     <OutputLocation>logtemp:///</OutputLocation>
