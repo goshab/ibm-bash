@@ -29,3 +29,4 @@ Successfully tested on:
 - Add support for TLSv13.
 - Add NTP configuration (check DP form factor).
 - Currently supports upto to 3 DP in cluster. Solution - add SOMA_URL and ROMA_RUL dynamic calculation based on number of gateways.
+- Add certificate verify step after Cert obj create.
