@@ -117,7 +117,7 @@ retry() {
     for ((i=1; i<=$RETRY_MAX; i++)); do
         declare -a RESULT="$(romaGetDpOjectOpState $DP_USERNAME $DP_PASSWORD $DP_ROMA_URL $DP_APIC_DOMAIN_NAME $DP_OBJECT_TYPE $DP_OBJECT_NAME)"
         if [ "$RESULT" = "up" ]; then
-            log_success "The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is up"
+            log_success "Retry "$i"/$RETRY_MAX: The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is up"
             break
         else
             log_info "Retry "$i"/$RETRY_MAX: The object $DP_OBJECT_TYPE $DP_OBJECT_NAME is not up yet, will check again in $RETRY_INTERVAL sec"
