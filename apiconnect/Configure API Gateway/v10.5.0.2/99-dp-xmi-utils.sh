@@ -109,9 +109,9 @@ somaUploadFile() {
     LOCAL_FOLDER=$6
     FILE_NAME=$7
 
+    DEST_FILE_PATH=$DP_FOLDER:///$FILE_NAME
     log_title "Uploading $LOCAL_FOLDER/$FILE_NAME file to $DEST_FILE_PATH"
     FILE_CONTENT_BASE64ENCODED=$(base64 $LOCAL_FOLDER/$FILE_NAME)
-    DEST_FILE_PATH=$DP_FOLDER:///$FILE_NAME
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
    <soapenv:Body>

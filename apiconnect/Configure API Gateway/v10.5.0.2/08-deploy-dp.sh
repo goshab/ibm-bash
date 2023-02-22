@@ -92,7 +92,7 @@ deployApicConfigToDataPower() {
 
     for ((OBJ_SEQ=0; OBJ_SEQ<$NUM_OF_CA_CERTS; OBJ_SEQ++)); do
         CUR_CA_CERT_FILENAME="$(getIndirectValue DP_CRYPTO_CA_CERT_FILENAME $OBJ_SEQ)"
-        if [ ! -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
+        if [ ! -z "$CUR_CA_CERT_FILENAME" ] && [ ! -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
             log_info "CA certificate file not found and will not be processed: $KEYS_DIR/$CUR_CA_CERT_FILENAME"
             echo "====================================================================================="
         else
