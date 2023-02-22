@@ -33,14 +33,15 @@ log_title() {
     echo -e $BLUE"$MSG"$NC
 }
 ##################################################################################
-# Calculates number of DP servers
+# Calculates number of dynamic objects
 ##################################################################################
-numOfDpGateways(){
-    SEQ=1
+numOfObjects(){
+    OBJ=$1
 
+    SEQ=0
     while [ true ]; do
-        CUR_DP="$(getIndirectValue DP_MGMT_IP_SERVER $SEQ)"
-        if [ -z "$CUR_DP" ]; then
+        CUR_OBJ="$(getIndirectValue $OBJ $SEQ)"
+        if [ -z "$CUR_OBJ" ]; then
             echo $SEQ
             exit
         fi
