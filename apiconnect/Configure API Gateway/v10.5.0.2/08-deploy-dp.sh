@@ -20,7 +20,6 @@ validateDpObjectStatus() {
 
     DP_ROMA_URL_CUSTOM=$DP_ROMA_URL'/mgmt/config/'$DOMAIN_NAME'/'$OBJECT_TYPE?state=1
     declare -a response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL_CUSTOM}" "GET" "")"
-    # echo response=$response
     rmi_response=$(echo $response | jq .http_response)
 
     if [ "$DEBUG" = "true" ]; then
@@ -94,7 +93,7 @@ deployApicConfigToDataPower() {
     for ((OBJ_SEQ=0; OBJ_SEQ<$NUM_OF_CA_CERTS; OBJ_SEQ++)); do
         CUR_CA_CERT_FILENAME="$(getIndirectValue DP_CRYPTO_CA_CERT_FILENAME $OBJ_SEQ)"
         if [ ! -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
-            log_info "CA certificate file not found and will not be configured: $KEYS_DIR/$CUR_CA_CERT_FILENAME"
+            log_info "CA certificate file not found and will not be processed: $KEYS_DIR/$CUR_CA_CERT_FILENAME"
             echo "====================================================================================="
         else
             somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $CUR_CA_CERT_FILENAME
@@ -119,13 +118,12 @@ deployApicConfigToDataPower() {
     somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME
     somaConfigurePasswordAlias $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_PEERING_GROUP_PASSWORD_ALIAS_OBJ $DP_PEERING_GROUP_PASSWORD
 
-    if [ ! -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
-        somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_ROOTCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_ROOTCA_CERT_FILENAME}"
-    fi
-
-    if [ ! -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
-        somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_INTERCA_CERT_OBJ "sharedcert:///${DP_CRYPTO_INTERCA_CERT_FILENAME}"
-    fi
+    for ((OBJ_SEQ=0; OBJ_SEQ<$NUM_OF_CA_CERTS; OBJ_SEQ++)); do
+        CUR_CA_CERT_FILENAME="$(getIndirectValue DP_CRYPTO_CA_CERT_FILENAME $OBJ_SEQ)"
+        if [ -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
+            somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $CUR_CA_CERT_FILENAME "sharedcert:///${CUR_CA_CERT_FILENAME}"
+        fi
+    done
 
     somaCreateCryptoCert $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_CERT_OBJ "sharedcert:///${DP_CRYPTO_DP_CERT_FILENAME}"
     somaCreateCryptoKey $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL $DP_APIC_DOMAIN_NAME $DP_CRYPTO_DP_KEY_OBJ "sharedcert:///${DP_CRYPTO_DP_PRIVKEY_FILENAME}"
@@ -179,8 +177,13 @@ verifyApicConfigDeployment() {
 
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL "default" "Domain" $DP_APIC_DOMAIN_NAME
 
-    validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_ROOTCA_CERT_OBJ
-    validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_INTERCA_CERT_OBJ
+    for ((OBJ_SEQ=0; OBJ_SEQ<$NUM_OF_CA_CERTS; OBJ_SEQ++)); do
+        CUR_CA_CERT_FILENAME="$(getIndirectValue DP_CRYPTO_CA_CERT_FILENAME $OBJ_SEQ)"
+        if [ -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
+            validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $CUR_CA_CERT_FILENAME
+        fi
+    done
+
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoCertificate" $DP_CRYPTO_DP_CERT_OBJ
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoKey" $DP_CRYPTO_DP_KEY_OBJ
     validateDpObjectStatus $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME "CryptoIdentCred" $DP_CRYPTO_DP_IDCRED_OBJ
@@ -225,7 +228,6 @@ fi
 cd $PROJECT_DIR
 echo =====================================================================================
 echo "Configuring the API Connect Gateway Service on DataPower gateways"
-# declare -a NUM_OF_DPS="$(numOfDpGateways)"
 declare -a NUM_OF_DPS="$(numOfObjects "DP_MGMT_IP_SERVER")"
 declare -a NUM_OF_CA_CERTS="$(numOfObjects "DP_CRYPTO_CA_CERT_FILENAME")"
 
@@ -237,8 +239,10 @@ for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
     CUR_DP_ROMA_URL="$(getIndirectValue DP_ROMA_URL_SERVER $CUR_DP_SEQ)"
+    CUR_DP_SOMA_URL="$(getIndirectValue DP_SOMA_URL_SERVER $CUR_DP_SEQ)"
 
     romaDeleteDomain $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_ROMA_URL $DP_APIC_DOMAIN_NAME
+    somaSaveDomainConfiguration $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
 done
 
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do

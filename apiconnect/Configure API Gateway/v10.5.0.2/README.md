@@ -24,7 +24,6 @@ Successfully tested on:
 ### Future features and know limitations
 
 - Add support for TLSv13.
-- Add support for dynamic list of CA certs.
 - Add NTP configuration (check DP form factor).
 - Add certificate verify step after Cert obj create.
 - Add support for dynamic number for gateways. Currently supports upto to 3 DP gateways.
