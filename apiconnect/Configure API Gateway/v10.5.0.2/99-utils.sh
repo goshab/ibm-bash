@@ -36,7 +36,7 @@ log_title() {
 # Calculates number of DP servers
 ##################################################################################
 numOfDpGateways(){
-    SEQ=$1
+    SEQ=1
 
     while [ true ]; do
         CUR_DP="$(getIndirectValue DP_MGMT_IP_SERVER $SEQ)"
