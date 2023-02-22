@@ -35,12 +35,25 @@ log_title() {
 ##################################################################################
 # Calculates number of DP servers
 ##################################################################################
-numOfDpGateways(){
-    SEQ=1
+# numOfDpGateways(){
+#     SEQ=1
 
+#     while [ true ]; do
+#         CUR_DP="$(getIndirectValue DP_MGMT_IP_SERVER $SEQ)"
+#         if [ -z "$CUR_DP" ]; then
+#             echo $SEQ
+#             exit
+#         fi
+#         ((SEQ++))
+#     done
+# }
+numOfObjects(){
+    OBJ=$1
+
+    SEQ=1
     while [ true ]; do
-        CUR_DP="$(getIndirectValue DP_MGMT_IP_SERVER $SEQ)"
-        if [ -z "$CUR_DP" ]; then
+        CUR_OBJ="$(getIndirectValue $OBJ $SEQ)"
+        if [ -z "$CUR_OBJ" ]; then
             echo $SEQ
             exit
         fi

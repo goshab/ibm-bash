@@ -91,17 +91,15 @@ deployApicConfigToDataPower() {
     somaConfigureDomainStatistics $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default"
     somaConfigureThrottler $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL 
 
-    if [ -z "$DP_CRYPTO_ROOTCA_CERT_FILENAME" ]; then
-        log_info "Root CA certificate was not provided in the configuration and will not be configured"
-    else
-        somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_ROOTCA_CERT_FILENAME
-    fi
-
-    if [ -z "$DP_CRYPTO_INTERCA_CERT_FILENAME" ]; then
-        log_info "Intermediate CA certificate was not provided in the configuration and will not be configured"
-    else
-        somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_INTERCA_CERT_FILENAME
-    fi
+    for ((OBJ_SEQ=0; OBJ_SEQ<$NUM_OF_CA_CERTS; OBJ_SEQ++)); do
+        CUR_CA_CERT_FILENAME="$(getIndirectValue DP_CRYPTO_CA_CERT_FILENAME $OBJ_SEQ)"
+        if [ ! -f $KEYS_DIR/$CUR_CA_CERT_FILENAME ]; then
+            log_info "CA certificate file not found and will not be configured: $KEYS_DIR/$CUR_CA_CERT_FILENAME"
+            echo "====================================================================================="
+        else
+            somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $CUR_CA_CERT_FILENAME
+        fi
+    done
 
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_CERT_FILENAME
     somaUploadFile $CUR_DP_USERNAME $CUR_DP_PASSWORD $CUR_DP_SOMA_URL "default" "sharedcert" $KEYS_DIR $DP_CRYPTO_DP_PRIVKEY_FILENAME
@@ -227,9 +225,12 @@ fi
 cd $PROJECT_DIR
 echo =====================================================================================
 echo "Configuring the API Connect Gateway Service on DataPower gateways"
-declare -a NUM_OF_DPS="$(numOfDpGateways)"
+# declare -a NUM_OF_DPS="$(numOfDpGateways)"
+declare -a NUM_OF_DPS="$(numOfObjects "DP_MGMT_IP_SERVER")"
+declare -a NUM_OF_CA_CERTS="$(numOfObjects "DP_CRYPTO_CA_CERT_FILENAME")"
 
 echo "Number of DataPower gateways: "$NUM_OF_DPS
+echo "Number of CA certs: "$NUM_OF_CA_CERTS
 echo =====================================================================================
 
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
