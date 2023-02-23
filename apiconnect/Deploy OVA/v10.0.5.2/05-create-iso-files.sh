@@ -18,14 +18,14 @@ cd $PROJECT_DIR
 echo "================================================================================"
 echo "Generating ISO for Management service"
 echo "================================================================================"
-../../apicup subsys install mgmt --out mgmtplan-out
+../apicup subsys install mgmt --out mgmtplan-out
 exit
 echo "================================================================================"
 echo "Generating ISO for Analytics service"
 echo "================================================================================"
-../../apicup subsys install analyt --out analytplan-out
+../apicup subsys install analyt --out analytplan-out
 echo "================================================================================"
 echo "Generating ISO for Portal service"
 echo "================================================================================"
-../../apicup subsys install port --out portplan-out
+../apicup subsys install port --out portplan-out
 echo "================================================================================"
