@@ -4,7 +4,7 @@
 
 Successfully tested setup:
 
-- DataPower 10.0.5.2, both standalone and 3-node cluster deployments.
+- DataPower 10.5.0.2, both standalone and 3-node cluster deployments.
 - curl 7.79.1
 - jq 1.6
 
