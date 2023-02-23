@@ -2,7 +2,7 @@
 
 ## Support
 
-Successfully tested on:
+Successfully tested setup:
 
 - DataPower 10.0.5.2, both standalone and 3-node cluster deployments.
 - curl 7.79.1
