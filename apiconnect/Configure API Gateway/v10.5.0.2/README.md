@@ -4,12 +4,14 @@
 
 Successfully tested on:
 
-- DataPower 10.0.5.2, standalone and 3-node cluster.
+- DataPower 10.0.5.2, both standalone and 3-node cluster deployments.
+- curl 7.79.1
+- jq 1.6
 
 ## Features
 
 - This set of scripts automates API Connect Gateway v6 configuration on DataPower.
-- The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the cert can be CA-signed or self-signed).
+- The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the certificate can be CA-signed or self-signed).
 - The Gateway setup supports separete ETH interfaces for management and data traffic.
 - Support none to multiple number of CA certificates in the chain.
 - Support up to three DataPower gateways in the Gateway Service.
@@ -24,7 +26,7 @@ Successfully tested on:
 - Duplicate the [provided template](00-project-template.conf) and fill it out.
 - Initialize a new Gateway Service project by running [the provided script](01-init-dp.sh).
 - Copy over the certificates and private key to the $PROJECT_DIR/$KEYS_DIR folder.
-- Execute the project by running the [deployment script](08-deploy-dp.sh) and passing the configuration file as an argument.
+- Execute the project by running the [deployment script](02-deploy-dp.sh) and passing the configuration file as an argument.
 
 ## Future features and know limitations
 
