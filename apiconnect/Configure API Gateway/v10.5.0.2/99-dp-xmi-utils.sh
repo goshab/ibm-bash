@@ -273,7 +273,7 @@ somaCreateCryptoKey() {
     OBJ_NAME=$5
     FILE_NAME=$6
 
-    log_title "Creating crypto key $OBJ_NAME"
+    log_title "Creating Crypto Key $OBJ_NAME"
 
     SOMA_REQ=$(cat <<-EOF
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dp="http://www.datapower.com/schemas/management">
