@@ -24,7 +24,7 @@ Successfully tested on:
 - Enable REST Management Interface on all DataPower gateways.
 - Clone this repository to you local folder.
 - Duplicate the [provided template](00-project-template.conf) and fill it out.
-- Initialize a new Gateway Service project by running [the provided script](01-init-dp.sh).
+- Initialize a new Gateway Service project by running [the provided script](01-init-dp.sh) and passing the configuration file as an argument.
 - Copy over the certificates and private key to the $PROJECT_DIR/$KEYS_DIR folder.
 - Execute the project by running the [deployment script](02-deploy-dp.sh) and passing the configuration file as an argument.
 
