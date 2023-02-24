@@ -210,13 +210,13 @@ verifyApicConfigDeployment() {
 # Main section
 ##################################################################################
 if [ -z "$1" ]; then
-    log_error "Syntax error, aborting."
-    log_error "  Provide configuration filename as a parameter"
+    echo "Syntax error, aborting."
+    echo "  Provide configuration filename as a parameter"
     exit
 fi
 
 if [ ! -f ./$1 ]; then
-    log_error "Configuration file $1 not found, aborting."
+    echo "Configuration file $1 not found, aborting."
     exit
 fi
 
@@ -228,6 +228,18 @@ fi
 cd $PROJECT_DIR
 echo =====================================================================================
 echo "Configuring the API Connect Gateway Service on DataPower gateways"
+
+if [ ! -f $KEYS_DIR/$DP_CRYPTO_DP_CERT_FILENAME ]; then
+    log_error "Certificate file not found, aborting: $KEYS_DIR/$DP_CRYPTO_DP_CERT_FILENAME"
+    exit
+    echo "====================================================================================="
+fi
+if [ ! -f $KEYS_DIR/$DP_CRYPTO_DP_PRIVKEY_FILENAME ]; then
+    log_error "Private key file not found, aborting: $KEYS_DIR/$DP_CRYPTO_DP_PRIVKEY_FILENAME"
+    exit
+    echo "====================================================================================="
+fi
+
 declare -a NUM_OF_DPS="$(numOfObjects "DP_MGMT_IP_SERVER")"
 declare -a NUM_OF_CA_CERTS="$(numOfObjects "DP_CRYPTO_CA_CERT_FILENAME")"
 
