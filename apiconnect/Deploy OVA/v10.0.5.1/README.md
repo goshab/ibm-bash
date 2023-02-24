@@ -24,3 +24,4 @@ Successfully tested setup:
 - Add support for Portal backup configuration.
 - Add support for cluster deployments.
 - Add support for 2HADR configuration.
+- Add apic CLI version verification.

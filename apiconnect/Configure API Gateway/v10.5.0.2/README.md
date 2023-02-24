@@ -36,3 +36,4 @@ Successfully tested setup:
 - Add support for DataPower Gateway v5c.
 - Add NTP configuration (check DP form factor).
 - Add support for dynamic number for gateways (currently supports upto to 3 DP gateways).
+- Add DataPower firmware version verification.
