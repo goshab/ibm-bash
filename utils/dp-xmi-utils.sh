@@ -19,7 +19,7 @@ runSoma() {
         fi
    else
         log_error "Error, DataPower SOMA response:"
-        log_error $response
+        log_error "$response"
         exit
     fi
 }
