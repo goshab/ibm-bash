@@ -34,6 +34,5 @@ Successfully tested setup:
 - Add certificate validation step.
 - Separate GWD and GW crypto keys.
 - Add support for DataPower Gateway v5c.
-- Move common utils to external location.
 - Add NTP configuration (check DP form factor).
 - Add support for dynamic number for gateways (currently supports upto to 3 DP gateways).

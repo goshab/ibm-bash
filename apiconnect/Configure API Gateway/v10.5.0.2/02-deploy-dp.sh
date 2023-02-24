@@ -221,9 +221,9 @@ if [ ! -f ./$1 ]; then
 fi
 
 . $1
-. 99-utils.sh
-. 99-dp-rmi-utils.sh
-. 99-dp-xmi-utils.sh
+. ../../../utils/utils.sh
+. ../../../utils/dp-rmi-utils.sh
+. ../../../utils/dp-xmi-utils.sh
 
 cd $PROJECT_DIR
 echo =====================================================================================
