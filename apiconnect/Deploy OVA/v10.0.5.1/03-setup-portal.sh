@@ -34,8 +34,8 @@ echo "==========================================================================
 ../apicup subsys set port ssh-keyfiles $VM_APICADM_SSH_KEY_FILENAME.pub
 ../apicup subsys set port default-password $VM_APICADM_PASSWORD_HASHED
 
-../apicup hosts create port $PTL_VM1_HOST $VM_HD_PASSWORD
-../apicup iface create port $PTL_VM1_HOST eth0 $PTL_VM1_IP/$PTL_VM1_SUBNET_MASK $PTL_VM1_DEFAULT_GATEWAY
+../apicup hosts create port $PTL_HOST_SERVER1 $VM_HD_PASSWORD
+../apicup iface create port $PTL_HOST_SERVER1 eth0 $PTL_IP_SERVER1/$PTL_SUBNET_MASK_SERVER1 $PTL_DEFAULT_GATEWAY_SERVER1
 
 # ../apicup subsys set port cassandra-backup-protocol=objstore
 # ../apicup subsys set port cassandra-backup-host=s3.us-south.cloud-object-storage.appdomain.cloud/us-south

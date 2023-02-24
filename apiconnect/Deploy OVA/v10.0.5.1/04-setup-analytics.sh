@@ -34,8 +34,8 @@ echo "==========================================================================
 ../apicup subsys set analyt ssh-keyfiles $VM_APICADM_SSH_KEY_FILENAME.pub
 ../apicup subsys set analyt default-password $VM_APICADM_PASSWORD_HASHED
 
-../apicup hosts create analyt $A7S_VM1_HOST $VM_HD_PASSWORD
-../apicup iface create analyt $A7S_VM1_HOST eth0 $A7S_VM1_IP/$A7S_VM1_SUBNET_MASK $A7S_VM1_DEFAULT_GATEWAY
+../apicup hosts create analyt $A7S_HOST_SERVER1 $VM_HD_PASSWORD
+../apicup iface create analyt $A7S_HOST_SERVER1 eth0 $A7S_IP_SERVER1/$A7S_SUBNET_MASK_SERVER1 $A7S_DEFAULT_GATEWAY_SERVER1
 echo "================================================================================"
 echo "Validating the service configuration"
 echo "================================================================================"

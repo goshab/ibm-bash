@@ -18,14 +18,14 @@ cd $PROJECT_DIR
 ../apicup licenses accept $APIC_LICENSE_ID
 ssh-keygen -t rsa -C "API Connect VM ssh login key" -q -N "" -f $VM_APICADM_SSH_KEY_FILENAME
 
-echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $MGMT_VM1_HOST" > $MGMT_VM1_HOST.sh
-chmod +x $MGMT_VM1_HOST.sh
+echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $MGMT_HOST_SERVER1" > $MGMT_HOST_SERVER1.sh
+chmod +x $MGMT_HOST_SERVER1.sh
 
-echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $PTL_VM1_HOST" > $PTL_VM1_HOST.sh
-chmod +x $PTL_VM1_HOST.sh
+echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $PTL_HOST_SERVER1" > $PTL_HOST_SERVER1.sh
+chmod +x $PTL_HOST_SERVER1.sh
 
-echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $A7S_VM1_HOST" > $A7S_VM1_HOST.sh
-chmod +x $A7S_VM1_HOST.sh
+echo "ssh -l apicadm -i $VM_APICADM_SSH_KEY_FILENAME $A7S_HOST_SERVER1" > $A7S_HOST_SERVER1.sh
+chmod +x $A7S_HOST_SERVER1.sh
 
 mkdir $KEYS_DIR
 cd $KEYS_DIR
