@@ -16,7 +16,7 @@ fi
 . ../../../utils/utils.sh
 
 log_title "Creating the project folders"
-mkidr $PROJECT_DIR
+mkdir $PROJECT_DIR
 # cd $PROJECT_DIR
 
 mkdir $PROJECT_DIR/$KEYS_DIR
