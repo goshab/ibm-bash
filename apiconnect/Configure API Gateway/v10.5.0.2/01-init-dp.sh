@@ -17,8 +17,5 @@ fi
 
 log_title "Creating the project folders"
 mkdir $PROJECT_DIR
-# cd $PROJECT_DIR
-
 mkdir $PROJECT_DIR/$KEYS_DIR
-# cd $KEYS_DIR
 log_info "Please copy over the certificates and the private key to the $PROJECT_DIR/$KEYS_DIR folder"
