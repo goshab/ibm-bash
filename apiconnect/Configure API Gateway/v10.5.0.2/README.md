@@ -32,7 +32,6 @@ Successfully tested setup:
 
 - Add support for TLSv13.
 - Add certificate validation step.
-- Separate GWD and GW crypto keys.
 - Add support for DataPower Gateway v5c.
 - Add NTP configuration (check DP form factor).
 - Add support for dynamic number for gateways (currently supports upto to 3 DP gateways).
