@@ -24,15 +24,6 @@ runSoma() {
     fi
 }
 ##################################################################################
-# Configure NTP service
-##################################################################################
-        # <NTPService name="NTP Service">
-        #     <mAdminState>enabled</mAdminState>
-        #     <Mode>on</Mode>
-        #     <RemoteServer>10.232.217.1</RemoteServer>
-        #     <RefreshInterval>900</RefreshInterval>
-        # </NTPService>
-##################################################################################
 # Configure domain Statistics
 ##################################################################################
 somaConfigureDomainStatistics() {
@@ -426,7 +417,6 @@ somaConfigureApiProbe() {
     MAX_RECORDS=$4
     EXPIRATION=$5
     GATEWAY_PEERING=$6
-    # DP_SEQ=$7
 
     log_title "Configuring API Probe"
 

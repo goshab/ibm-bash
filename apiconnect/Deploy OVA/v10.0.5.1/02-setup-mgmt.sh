@@ -22,13 +22,9 @@ cd $PROJECT_DIR
 echo "================================================================================"
 echo "Configuring the "$MGMT_APIC_SUBSYSTEM_NAME" service"
 echo "================================================================================"
-# set -x
-# ../apicup licenses accept $APIC_LICENSE_ID
 ../apicup subsys create mgmt $MGMT_APIC_SUBSYSTEM_NAME
 ../apicup subsys set mgmt deployment-profile=$MGMT_APIC_DEPLOYMENT_PROFILE
 ../apicup subsys set mgmt license-use=$APIC_LICENSE
-# set +x
-# exit
 ../apicup subsys set mgmt search-domain=$MGMT_SEARCH_DOMAIN
 ../apicup subsys set mgmt dns-servers=$MGMT_DNS_SERVERS
 

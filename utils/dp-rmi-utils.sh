@@ -15,30 +15,13 @@ runRoma() {
     HTTP_METHOD=$4
     DP_ROMA_REQ=$5
 
-    # CLI="curl -s -k -u $DP_USERNAME:$DP_PASSWORD -X $HTTP_METHOD $DP_ROMA_URL"
-    # if [ ! -z "$DP_ROMA_REQ" ]; then
-    #     CLI=$CLI" -d "\'${DP_ROMA_REQ}\'
-    # fi
-    # if [ "$DEBUG" = "true" ]; then
-    #     echo CLI=$CLI
-    # fi
-
-    # response=$(eval $CLI)
-    # echo $response
-
     CLI="curl -w "%{http_code}" -s -k -u $DP_USERNAME:$DP_PASSWORD -X $HTTP_METHOD $DP_ROMA_URL"
     if [ ! -z "$DP_ROMA_REQ" ]; then
         CLI=$CLI" -d "\'${DP_ROMA_REQ}\'
     fi
     response=$(eval $CLI)
-    # http_code=$(tail -n1 <<< "$response")
     http_code=${response: -3}
-    # http_body=${response:0:-3}
     http_response=${response:0:$((${#response} - 3))}
-    # content=$(sed '$ d' <<< "$response")
-    # content=$(echo ${response} | head -c-4)
-    # echo $http_code
-    # echo $content
     echo "{\"http_code\" : $http_code, \"http_response\" : $http_response}"
 
 }
