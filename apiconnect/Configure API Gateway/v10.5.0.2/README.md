@@ -11,10 +11,10 @@ Successfully tested setup:
 ## Features
 
 - This set of scripts automates API Connect Gateway v6 configuration on DataPower.
-- The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the certificate can be CA-signed or self-signed).
-- The Gateway setup supports separete ETH interfaces for management and data traffic.
-- Support none to multiple number of CA certificates in the chain.
 - Support three DataPower gateways in the Gateway Service.
+- Support single or separete ETH interfaces for management and data traffic.
+- Support CA-signed or self-signed certificates for peering groups.
+- Support none to multiple number of CA certificates in the peering CA chain.
 
 ## Usage
 
