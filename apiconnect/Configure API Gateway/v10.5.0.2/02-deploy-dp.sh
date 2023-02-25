@@ -222,8 +222,8 @@ fi
 
 . $1
 . ../../../utils/utils.sh
-. ../../../utils/dp-rmi-utils.sh
-. ../../../utils/dp-xmi-utils.sh
+# . ../../../utils/dp-rmi-utils.sh
+# . ../../../utils/dp-xmi-utils.sh
 
 cd $PROJECT_DIR
 echo =====================================================================================
