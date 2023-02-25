@@ -4,7 +4,7 @@
 
 Successfully tested setup:
 
-- DataPower 10.5.0.2, both standalone and 3-node cluster deployments.
+- DataPower 10.5.0.2, 3-node cluster deployment.
 - curl 7.79.1
 - jq 1.6
 
@@ -14,7 +14,7 @@ Successfully tested setup:
 - The DataPower GWD and DataPower GW configurations are based on the same crypto keys (the certificate can be CA-signed or self-signed).
 - The Gateway setup supports separete ETH interfaces for management and data traffic.
 - Support none to multiple number of CA certificates in the chain.
-- Support up to three DataPower gateways in the Gateway Service.
+- Support three DataPower gateways in the Gateway Service.
 
 ## Usage
 
@@ -30,9 +30,11 @@ Successfully tested setup:
 
 ## Future features and know limitations
 
+- Add DataPower firmware version verification.
+- Separate standard DP setup and API Connect configuration.
+- Add NTP configuration (check DP form factor).
 - Add support for TLSv13.
 - Add certificate validation step.
+- Add support for standalone deployments.
+- Add support for dynamic number for gateways (currently supports 3 DP gateways).
 - Add support for DataPower Gateway v5c.
-- Add NTP configuration (check DP form factor).
-- Add support for dynamic number for gateways (currently supports upto to 3 DP gateways).
-- Add DataPower firmware version verification.
