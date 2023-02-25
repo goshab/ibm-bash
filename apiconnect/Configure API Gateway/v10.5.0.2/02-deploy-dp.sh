@@ -245,8 +245,16 @@ declare -a NUM_OF_CA_CERTS="$(numOfObjects "DP_CRYPTO_CA_CERT_FILENAME")"
 
 echo "Number of DataPower gateways: "$NUM_OF_DPS
 echo "Number of CA certs: "$NUM_OF_CA_CERTS
-echo =====================================================================================
 
+for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
+    CUR_HOST="$(getIndirectValue DP_MGMT_HOSTNAME_SERVER $CUR_DP_SEQ)"
+    CUR_SOMA_PORT="$(getIndirectValue DP_SOMA_PORT_SERVER $CUR_DP_SEQ)"
+    CUR_ROMA_PORT="$(getIndirectValue DP_ROMA_PORT_SERVER $CUR_DP_SEQ)"
+    declare DP_SOMA_URL_SERVER$CUR_DP_SEQ="https://${CUR_HOST}:${CUR_SOMA_PORT}${DP_SOMA_URI}"
+    declare DP_ROMA_URL_SERVER$CUR_DP_SEQ="https://${CUR_HOST}:${CUR_ROMA_PORT}"
+done
+
+echo =====================================================================================
 for ((CUR_DP_SEQ=0; CUR_DP_SEQ<$NUM_OF_DPS; CUR_DP_SEQ++)); do
     CUR_DP_USERNAME="$(getIndirectValue DP_USER_NAME_SERVER $CUR_DP_SEQ)"
     CUR_DP_PASSWORD="$(getIndirectValue DP_USER_PASSWORD_SERVER $CUR_DP_SEQ)"
