@@ -107,12 +107,25 @@ EOF
 ##################################################################################
 # Get DataPower platform details
 ##################################################################################
-romaGetPlatformDetails() {
+romaGetDpPlatformDetails() {
     DP_USERNAME=$1
     DP_PASSWORD=$2
     DP_ROMA_URL=$3
 
     declare -a response="$(runRoma $DP_USERNAME $DP_PASSWORD "${DP_ROMA_URL}/mgmt/status/default/VirtualPlatform3" "GET" "")"
+    rmi_response=$(echo $response | jq .http_response)
+    echo $rmi_response
+}
+##################################################################################
+# Get DataPower version details
+##################################################################################
+romaGetDpVersionDetails() {
+    DP_USERNAME=$1
+    DP_PASSWORD=$2
+    DP_ROMA_URL=$3
+
+    URL="${DP_ROMA_URL}/mgmt/status/default/FirmwareVersion3"
+    declare -a response="$(runRoma $DP_USERNAME $DP_PASSWORD "${URL}" "GET" "")"
     rmi_response=$(echo $response | jq .http_response)
     echo $rmi_response
 }
