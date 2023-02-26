@@ -40,3 +40,4 @@ Successfully tested setup:
 - Add support for DataPower Gateway v5c.
 - Add XMI response caching.
 - Add RMI response caching.
+- Check RMI response http code.
