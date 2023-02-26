@@ -15,6 +15,7 @@ Successfully tested setup:
 - Support single or separete ETH interfaces for management and data traffic.
 - Support CA-signed or self-signed certificates for peering groups.
 - Support none to multiple number of CA certificates in the peering CA chain.
+- Verifies correct DataPower firmware version.
 
 ## Usage
 
@@ -30,7 +31,6 @@ Successfully tested setup:
 
 ## Future features and know limitations
 
-- Add DataPower firmware version verification.
 - Separate standard DP setup and API Connect configuration.
 - Add NTP configuration (check DP form factor).
 - Add support for TLSv13.
