@@ -38,3 +38,5 @@ Successfully tested setup:
 - Add support for standalone deployments.
 - Add support for dynamic number for gateways (currently supports 3 DP gateways).
 - Add support for DataPower Gateway v5c.
+- Add XMI response caching.
+- Add RMI response caching.
