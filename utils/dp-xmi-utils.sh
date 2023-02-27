@@ -11,16 +11,26 @@ runSoma() {
 
     response=$(curl -s -k -X POST -u $DP_USERNAME:$DP_PASSWORD $DP_SOMA_URL -d "${DP_SOMA_REQ}")
     analysis=$(echo $response | grep -o 'OK')
-    if [ "$analysis" = "OK" ]; then
-        log_success "Success"
-        if [ "$DEBUG" = "true" ]; then
-            echo Response
-            echo $response
-        fi
-   else
+#     if [ "$analysis" = "OK" ]; then
+#         log_success "Success"
+#         if [ "$DEBUG" = "true" ]; then
+#             echo Response
+#             echo $response
+#         fi
+#    else
+#         log_error "Error, DataPower SOMA response:"
+#         log_error "$response"
+#         exit
+#     fi
+    if [ ! "$analysis" = "OK" ]; then
         log_error "Error, DataPower SOMA response:"
         log_error "$response"
         exit
+    fi
+    log_success "Success"
+    if [ "$DEBUG" = "true" ]; then
+        echo Response
+        echo $response
     fi
 }
 ##################################################################################
