@@ -41,3 +41,4 @@ Successfully tested setup:
 - Add XMI response caching.
 - Add RMI response caching.
 - Check RMI response http code.
+- Write to log file.
