@@ -29,6 +29,7 @@ echo "==================================================="
 echo "Setting up shell profile"
 echo "==================================================="
 sed -i '$ a export HISTSIZE=5000' $SHELL_PROFILE_PATH
+sed -i '$ a export SAVEHIST=\$HISTSIZE' $SHELL_PROFILE_PATH
 sed -i '$ a export HISTFILESIZE=2000' $SHELL_PROFILE_PATH
 sed -i '$ a export KUBECONFIG=~/.kube/config' $SHELL_PROFILE_PATH
 sed -i '$ a export TILLER_NAMESPACE=tiller' $SHELL_PROFILE_PATH
@@ -38,6 +39,7 @@ sed -i '$ a alias size="du -hc --max-depth=0"' $SHELL_PROFILE_PATH
 sed -i '$ a alias ic="ibmcloud"' $SHELL_PROFILE_PATH
 sed -i '$ a alias k='kubectl'' $SHELL_PROFILE_PATH
 sed -i '$ a unset TMOUT' $SHELL_PROFILE_PATH
+sed -i '$ a setopt hist_ignore_all_dups' $SHELL_PROFILE_PATH
 cat $SHELL_PROFILE_PATH
 EOF
 log_title "DONE"
